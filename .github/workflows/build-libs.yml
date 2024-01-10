@@ -18,13 +18,41 @@ jobs:
     
     - name: Install dependencies
       run: |
-        sudo apt-add-repository ppa:hrzhu/sdl2-backport
         sudo apt-get update
-        sudo apt-get install ninja-build libsdl2-dev
+        sudo apt-get install build-essential git make autoconf automake libtool \
+            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            libaudio-dev libjack-dev libsndio-dev libsamplerate0-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libwayland-dev \
+            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
+            libpipewire-0.3-dev libdecor-0-dev
     
     - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8'
+    
+    - name: Configure SDL2 (CMake)
+      working-directory: ./libs/source/SDL2
+      run: |
+        ${{ matrix.platform.source_cmd }}
+        cmake -S . -B build -G Ninja \
+        -DSDL_TESTS=ON \
+        -DSDL_WERROR=ON \
+        -DSDL_INSTALL_TESTS=ON \
+        -DSDL_VENDOR_INFO="Github Workflow" \
+        -DCMAKE_INSTALL_PREFIX=cmake_prefix \
+        -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build SLD2 (CMake)
+      working-directory: ./libs/source/SDL2
+      run: cmake --build build/ --config Release --verbose --parallel
+
+    - name: Install SDL2 (CMake)
+      run: |
+        set -eu
+        cmake --install build/ --config Release
+        echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
+        ( cd cmake_prefix; find ) | LC_ALL=C sort -u
 
     - name: dotnet build FNA.Core
       working-directory: ./libs/source/FNA
