@@ -31,23 +31,23 @@ jobs:
       run: dotnet build -c Release FNA.Core.csproj
     
     - name: CMake configure FAudio (Release)
-      working-directory: ./libs/source/FNA/lib/Faudio
+      working-directory: FNA/lib/Faudio
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build FAudio (Release)
-      working-directory: ./libs/source/FNA/lib/Faudio
+      working-directory: FNA/lib/Faudio
       run: ninja -C release
 
     - name: CMake configure FNA3D (Release)
-      working-directory: ./libs/source/FNA/lib/FNA3D
+      working-directory: FNA/lib/FNA3D
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build FNA3D (Release)
-      working-directory: ./libs/source/FNA/lib/FNA3D
+      working-directory: FNA/lib/FNA3D
       run: ninja -C release
 
     - name: Build Theorafile
-      working-directory: ./libs/source/FNA/lib/Theorafile
+      working-directory: FNA/lib/Theorafile
       run: make
 
   macos:
