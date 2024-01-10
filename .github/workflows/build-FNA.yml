@@ -31,11 +31,11 @@ jobs:
       run: dotnet build -c Release FNA.Core.csproj
     
     - name: CMake configure FAudio (Release)
-      working-directory: FNA/lib/Faudio
+      working-directory: libs/source/FNA/lib/FAudio
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build FAudio (Release)
-      working-directory: FNA/lib/Faudio
+      working-directory: libs/source/FNA/lib/FAudio
       run: ninja -C release
 
     - name: CMake configure FNA3D (Release)
