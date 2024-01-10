@@ -39,15 +39,15 @@ jobs:
       run: ninja -C release
 
     - name: CMake configure FNA3D (Release)
-      working-directory: FNA/lib/FNA3D
+      working-directory: libs/source/FNA/lib/FNA3D
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build FNA3D (Release)
-      working-directory: FNA/lib/FNA3D
+      working-directory: libs/source/FNA/lib/FNA3D
       run: ninja -C release
 
     - name: Build Theorafile
-      working-directory: FNA/lib/Theorafile
+      working-directory: libs/source/FNA/lib/Theorafile
       run: make
 
   macos:
