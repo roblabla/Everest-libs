@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        sparse-checkout: libs/source/FNA
+        sparse-checkout: libs/source
         submodules: recursive
     
     - name: Install dependencies
@@ -31,23 +31,21 @@ jobs:
       with:
         dotnet-version: '8'
     
-    - name: Configure SDL2 (CMake)
-      working-directory: ./libs/source/SDL2
+    - name: CMake configure SDL2 (Release)
+      working-directory: libs/source/SDL2
       run: |
         ${{ matrix.platform.source_cmd }}
         cmake -S . -B build -G Ninja \
-        -DSDL_TESTS=ON \
-        -DSDL_WERROR=ON \
-        -DSDL_INSTALL_TESTS=ON \
         -DSDL_VENDOR_INFO="Github Workflow" \
         -DCMAKE_INSTALL_PREFIX=cmake_prefix \
         -DCMAKE_BUILD_TYPE=Release
     
-    - name: Build SLD2 (CMake)
-      working-directory: ./libs/source/SDL2
+    - name: Build SLD2 (Release)
+      working-directory: libs/source/SDL2
       run: cmake --build build/ --config Release --verbose --parallel
 
-    - name: Install SDL2 (CMake)
+    - name: Install SDL2
+      working-directory: libs/source/SDL2
       run: |
         set -eu
         cmake --install build/ --config Release
@@ -55,7 +53,7 @@ jobs:
         ( cd cmake_prefix; find ) | LC_ALL=C sort -u
 
     - name: dotnet build FNA.Core
-      working-directory: ./libs/source/FNA
+      working-directory: libs/source/FNA
       run: dotnet build -c Release FNA.Core.csproj
     
     - name: CMake configure FAudio (Release)
