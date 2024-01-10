@@ -50,6 +50,16 @@ jobs:
       working-directory: libs/source/FNA/lib/Theorafile
       run: make
 
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FNA_x64-linux
+        path: |
+          libs/source/FNA/bin/Release/net7.0/FNA.dll
+          libs/source/FNA/lib/FAudio/release/**.so
+          libs/source/FNA/lib/FNA3D/release/**.so
+          libs/source/FNA/lib/Theorafile/**.so
+
   macos:
     name: macOS
     runs-on: macos-latest
@@ -84,6 +94,15 @@ jobs:
     - name: Build Theorafile
       working-directory: libs/source/FNA/lib/Theorafile
       run: make
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FNA_x64-macos
+        path: |
+          libs/source/FNA/lib/FAudio/release/**.dylib
+          libs/source/FNA/lib/FNA3D/release/**.dylib
+          libs/source/FNA/lib/Theorafile/**.dylib
   
   windows-mingw:
     name: Windows (MinGW)
@@ -133,3 +152,12 @@ jobs:
     - name: Build Theorafile
       working-directory: libs/source/FNA/lib/Theorafile
       run: mingw32-make
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: FNA_${{matrix.env}}-win
+        path: |
+          libs/source/FNA/lib/FAudio/**.dll
+          libs/source/FNA/lib/FNA3D/**.dll
+          libs/source/FNA/lib/Theorafile/**.dll
