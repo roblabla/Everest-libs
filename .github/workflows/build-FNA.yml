@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        sparse-checkout: /libs/source/FNA
+        sparse-checkout: libs/source/FNA
         submodules: recursive
     
     - uses: actions/setup-dotnet@v4
