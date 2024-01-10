@@ -1,4 +1,4 @@
-name: FNA build
+name: Everest-libs build
 
 on: [push, pull_request]
 
@@ -53,7 +53,7 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: FNA_linux-x64
+        name: Everest-libs_linux-x64
         path: |
           libs/source/FNA/bin/Release/net7.0/FNA.dll
           libs/source/FNA/lib/FAudio/release/*.so
@@ -98,7 +98,7 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: FNA_macos-x64
+        name: Everest-libs_macos-x64
         path: |
           libs/source/FNA/lib/FAudio/release/*.dylib
           libs/source/FNA/lib/FNA3D/release/*.dylib
@@ -156,7 +156,7 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: FNA_win-${{matrix.env}}
+        name: Everest-libs_win32-${{matrix.env}}
         path: |
           libs/source/FNA/lib/FAudio/release/*.dll
           libs/source/FNA/lib/FNA3D/release/*.dll
