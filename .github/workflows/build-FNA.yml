@@ -91,6 +91,11 @@ jobs:
     defaults:
       run:
         shell: msys2 {0}
+    strategy:
+    matrix:
+      include:
+        - { sys: mingw64, env: x86_64 }
+        - { sys: mingw32, env: i686 }
     steps:
     - uses: actions/checkout@v4
       with:
@@ -100,14 +105,14 @@ jobs:
     - name: Set up MSYS2
       uses: msys2/setup-msys2@v2
       with:
-        msystem: mingw32
+        msystem: ${{matrix.sys}}
         install: >-
-          mingw-w64-i686-cc
-          mingw-w64-i686-cmake
-          mingw-w64-i686-make
-          mingw-w64-i686-ninja
-          mingw-w64-i686-pkg-config
-          mingw-w64-i686-SDL2
+          mingw-w64-${{matrix.env}}-cc
+          mingw-w64-${{matrix.env}}-cmake
+          mingw-w64-${{matrix.env}}-make
+          mingw-w64-${{matrix.env}}-ninja
+          mingw-w64-${{matrix.env}}-pkg-config
+          mingw-w64-${{matrix.env}}-SDL2
     
     - name: CMake configure FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
