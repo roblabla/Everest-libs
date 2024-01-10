@@ -1,0 +1,3 @@
+[submodule "FNA"]
+	path = libs/source/FNA
+	url = https://github.com/FNA-XNA/FNA
