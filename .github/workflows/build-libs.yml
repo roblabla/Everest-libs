@@ -57,6 +57,7 @@ jobs:
       run: |
         export CMAKE_CONFIGURATION_TYPES=Release
         cmake -B build -G Ninja \
+          -DSDL2IMAGE_VENDORED=1 \
           -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_BUILD_TYPE=Release \
@@ -230,7 +231,6 @@ jobs:
       run: |
         export CMAKE_CONFIGURATION_TYPES=Release
         cmake -B build -G Ninja \
-          -DSDL2IMAGE_VENDORED=1 \
           -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_BUILD_TYPE=Release \
