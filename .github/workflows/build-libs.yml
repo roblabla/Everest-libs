@@ -273,8 +273,7 @@ jobs:
       run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.name }}
   
     - name: Upload Piton binaries
-      working-directory: libs/source/Piton
       uses: actions/upload-artifact@v4
       with:
         name: piton-binaries
-        path: ${{ matrix.name }}
+        path: libs/source/Piton/${{ matrix.name }}
