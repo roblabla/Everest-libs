@@ -58,7 +58,7 @@ jobs:
     
     - name: CMake configure FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib
+      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib
 
     - name: Build FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
@@ -66,7 +66,7 @@ jobs:
 
     - name: CMake configure FNA3D (Release)
       working-directory: libs/source/FNA/lib/FNA3D
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib
+      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib
 
     - name: Build FNA3D (Release)
       working-directory: libs/source/FNA/lib/FNA3D
