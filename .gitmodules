@@ -4,6 +4,6 @@
 [submodule "SDL2"]
 	path = libs/source/SDL2
 	url = https://github.com/libsdl-org/SDL/
-[submodule "SDL_image"]
-	path = libs/source/SDL_image
+[submodule "SDL2_image"]
+	path = libs/source/SDL2_image
 	url = https://github.com/libsdl-org/SDL_image/
