@@ -104,7 +104,10 @@ jobs:
         submodules: recursive
     
     - name: Install dependencies
-      run: brew install ninja sdl2
+      run: brew install ninja
+
+    - name: Build SDL2 and SDL2_image
+      run: brew install --build-from-source sdl2 sdl2_image
 
     - name: CMake configure FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
@@ -162,11 +165,31 @@ jobs:
           mingw-w64-${{matrix.env}}-make
           mingw-w64-${{matrix.env}}-ninja
           mingw-w64-${{matrix.env}}-pkg-config
-          mingw-w64-${{matrix.env}}-SDL2
+    
+    - name: CMake configure SDL2 (Release)
+      working-directory: libs/source/SDL2
+      run: |
+        ${{ matrix.platform.source_cmd }}
+        cmake -S . -B build -G Ninja \
+        -DSDL_VENDOR_INFO="Github Workflow" \
+        -DCMAKE_INSTALL_PREFIX=cmake_prefix \
+        -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build SLD2 (Release)
+      working-directory: libs/source/SDL2
+      run: cmake --build build/ --config Release --verbose --parallel
+
+    - name: Install SDL2
+      working-directory: libs/source/SDL2
+      run: |
+        set -eu
+        cmake --install build/ --config Release
+        echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
+        ( cd cmake_prefix; find ) | LC_ALL=C sort -u
     
     - name: CMake configure FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib
 
     - name: Build FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
@@ -174,7 +197,7 @@ jobs:
 
     - name: CMake configure FNA3D (Release)
       working-directory: libs/source/FNA/lib/FNA3D
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib
 
     - name: Build FNA3D (Release)
       working-directory: libs/source/FNA/lib/FNA3D
