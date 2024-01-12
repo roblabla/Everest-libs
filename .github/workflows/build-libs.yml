@@ -71,7 +71,8 @@ jobs:
       working-directory: libs/source/SDL2_image
       run: cmake --build build/ --config Release --verbose --parallel
 
-    - name: Install (CMake)
+    - name: Install SDL2_image
+      working-directory: libs/source/SDL2_image
       run: |
         set -eu
         cmake --install build/ --config Release
@@ -229,6 +230,7 @@ jobs:
       run: |
         export CMAKE_CONFIGURATION_TYPES=Release
         cmake -B build -G Ninja \
+          -DSDL2IMAGE_VENDORED=1 \
           -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_BUILD_TYPE=Release \
@@ -244,6 +246,7 @@ jobs:
       run: cmake --build build/ --config Release --verbose --parallel
 
     - name: Install (CMake)
+      working-directory: libs/source/SDL2_image
       run: |
         set -eu
         cmake --install build/ --config Release
