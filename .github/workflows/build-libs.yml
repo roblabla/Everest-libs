@@ -66,7 +66,7 @@ jobs:
           -DSDL2IMAGE_JXL=ON \
           -DSDL2IMAGE_TIF=ON \
           -DSDL2IMAGE_WEBP=ON \
-          -DCMAKE_INSTALL_PREFIX=prefix_cmake
+          -DCMAKE_INSTALL_PREFIX=cmake_prefix
 
     - name: Build SDL2_image (Release)
       working-directory: libs/source/SDL2_image
@@ -78,7 +78,7 @@ jobs:
         set -eu
         cmake --install build/ --config Release
         echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
-        ( cd prefix_cmake; find . ) | LC_ALL=C sort -u
+        ( cd cmake_prefix; find . ) | LC_ALL=C sort -u
 
     - name: dotnet build FNA.Core
       working-directory: libs/source/FNA
@@ -256,7 +256,7 @@ jobs:
           -DSDL2IMAGE_JXL=ON \
           -DSDL2IMAGE_TIF=ON \
           -DSDL2IMAGE_WEBP=ON \
-          -DCMAKE_INSTALL_PREFIX=prefix_cmake
+          -DCMAKE_INSTALL_PREFIX=cmake_prefix
 
     - name: Build SDL2_image (Release)
       working-directory: libs/source/SDL2_image
@@ -267,8 +267,8 @@ jobs:
       run: |
         set -eu
         cmake --install build/ --config Release
-        echo "SDL2_image_DIR=$(pwd)/prefix_cmake" >> $GITHUB_ENV
-        ( cd prefix_cmake; find . ) | LC_ALL=C sort -u
+        echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
+        ( cd cmake_prefix; find . ) | LC_ALL=C sort -u
     
     - name: CMake configure FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
