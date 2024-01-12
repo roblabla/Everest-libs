@@ -368,7 +368,7 @@ jobs:
         path: libs/source/Piton/${{ matrix.name }}
   
   release-bins:
-    needs:
+    needs: [linux, macos, windows-mingw, piton-build]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v4
