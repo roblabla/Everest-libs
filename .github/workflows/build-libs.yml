@@ -25,7 +25,8 @@ jobs:
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libwayland-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
-            libpipewire-0.3-dev libdecor-0-dev
+            libpipewire-0.3-dev libdecor-0-dev \
+            libavif-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev nasm zlib1g-dev
     
     - uses: actions/setup-dotnet@v4
       with:
@@ -34,13 +35,12 @@ jobs:
     - name: CMake configure SDL2 (Release)
       working-directory: libs/source/SDL2
       run: |
-        ${{ matrix.platform.source_cmd }}
         cmake -S . -B build -G Ninja \
         -DSDL_VENDOR_INFO="Github Workflow" \
         -DCMAKE_INSTALL_PREFIX=cmake_prefix \
         -DCMAKE_BUILD_TYPE=Release
     
-    - name: Build SLD2 (Release)
+    - name: Build SDL2 (Release)
       working-directory: libs/source/SDL2
       run: cmake --build build/ --config Release --verbose --parallel
 
@@ -51,6 +51,32 @@ jobs:
         cmake --install build/ --config Release
         echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
         ( cd cmake_prefix; find ) | LC_ALL=C sort -u
+
+    - name: CMake configure SDL2_image (Release) 
+      working-directory: libs/source/SDL2_image
+      run: |
+        export CMAKE_CONFIGURATION_TYPES=Release
+        cmake -B build -G Ninja \
+          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
+          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DSDL2IMAGE_SAMPLES=ON \
+          -DSDL2IMAGE_AVIF=ON \
+          -DSDL2IMAGE_JXL=ON \
+          -DSDL2IMAGE_TIF=ON \
+          -DSDL2IMAGE_WEBP=ON \
+          -DCMAKE_INSTALL_PREFIX=prefix_cmake
+
+    - name: Build SDL2_image (Release)
+      working-directory: libs/source/SDL2_image
+      run: cmake --build build/ --config Release --verbose --parallel
+
+    - name: Install (CMake)
+      run: |
+        set -eu
+        cmake --install build/ --config Release
+        echo "SDL2_image_DIR=$(pwd)/prefix_cmake" >> $GITHUB_ENV
+        ( cd prefix_cmake; find . ) | LC_ALL=C sort -u
 
     - name: dotnet build FNA.Core
       working-directory: libs/source/FNA
@@ -81,8 +107,8 @@ jobs:
       with:
         name: Everest-libs_linux-x64
         path: |
-          libs/source/SLD2/cmake_prefix/lib/libSDL2-2.0.so.0
-          libs/source/SLD2/cmake_prefix/lib/libSDL2-2.0.so
+          libs/source/SDL2/cmake_prefix/lib/libSDL*
+          libs/source/SDL2_image/cmake_prefix/lib/libSDL*
           libs/source/FNA/bin/Release/net7.0/FNA.dll
           libs/source/FNA/lib/FAudio/release/*.so
           libs/source/FNA/lib/FAudio/release/*.so.0
@@ -165,20 +191,28 @@ jobs:
         install: >-
           mingw-w64-${{matrix.env}}-cc
           mingw-w64-${{matrix.env}}-cmake
+          mingw-w64-${{matrix.env}}-gcc
           mingw-w64-${{matrix.env}}-make
           mingw-w64-${{matrix.env}}-ninja
           mingw-w64-${{matrix.env}}-pkg-config
+          mingw-w64-${{matrix.env}}-nasm
+          mingw-w64-${{matrix.env}}-libavif
+          mingw-w64-${{matrix.env}}-libjpeg-turbo
+          mingw-w64-${{matrix.env}}-libjxl
+          mingw-w64-${{matrix.env}}-libpng
+          mingw-w64-${{matrix.env}}-libtiff
+          mingw-w64-${{matrix.env}}-libwebp
+          mingw-w64-${{matrix.env}}-zlib
     
     - name: CMake configure SDL2 (Release)
       working-directory: libs/source/SDL2
       run: |
-        ${{ matrix.platform.source_cmd }}
         cmake -S . -B build -G Ninja \
         -DSDL_VENDOR_INFO="Github Workflow" \
         -DCMAKE_INSTALL_PREFIX=cmake_prefix \
         -DCMAKE_BUILD_TYPE=Release
     
-    - name: Build SLD2 (Release)
+    - name: Build SDL2 (Release)
       working-directory: libs/source/SDL2
       run: cmake --build build/ --config Release --verbose --parallel
 
@@ -189,6 +223,32 @@ jobs:
         cmake --install build/ --config Release
         echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
         ( cd cmake_prefix; find ) | LC_ALL=C sort -u
+    
+    - name: CMake configure SDL2_image (Release) 
+      working-directory: libs/source/SDL2_image
+      run: |
+        export CMAKE_CONFIGURATION_TYPES=Release
+        cmake -B build -G Ninja \
+          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
+          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DSDL2IMAGE_SAMPLES=ON \
+          -DSDL2IMAGE_AVIF=ON \
+          -DSDL2IMAGE_JXL=ON \
+          -DSDL2IMAGE_TIF=ON \
+          -DSDL2IMAGE_WEBP=ON \
+          -DCMAKE_INSTALL_PREFIX=prefix_cmake
+
+    - name: Build SDL2_image (Release)
+      working-directory: libs/source/SDL2_image
+      run: cmake --build build/ --config Release --verbose --parallel
+
+    - name: Install (CMake)
+      run: |
+        set -eu
+        cmake --install build/ --config Release
+        echo "SDL2_image_DIR=$(pwd)/prefix_cmake" >> $GITHUB_ENV
+        ( cd prefix_cmake; find . ) | LC_ALL=C sort -u
     
     - name: CMake configure FAudio (Release)
       working-directory: libs/source/FNA/lib/FAudio
@@ -216,6 +276,7 @@ jobs:
         name: Everest-libs_win32-${{matrix.env}}
         path: |
           ${{ env.SDL2_DIR }}/bin/SDL2.dll
+          ${{ env.SDL2_image_DIR }}/bin/SDL*
           libs/source/FNA/lib/FAudio/release/*.dll
           libs/source/FNA/lib/FNA3D/release/*.dll
           libs/source/FNA/lib/Theorafile/*.dll
@@ -273,7 +334,7 @@ jobs:
       run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.name }}
   
     - name: Upload Piton binaries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: piton-binaries
         path: libs/source/Piton/${{ matrix.name }}
