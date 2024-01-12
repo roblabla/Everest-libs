@@ -219,3 +219,61 @@ jobs:
           libs/source/FNA/lib/FAudio/release/*.dll
           libs/source/FNA/lib/FNA3D/release/*.dll
           libs/source/FNA/lib/Theorafile/*.dll
+  
+  piton-build:
+    strategy:
+      matrix:
+        include:
+          # Windows i686
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            args: -F gui
+            name: piton-gui-win_x86.exe
+
+          # Windows x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: -F gui
+            name: piton-gui-win_x64.exe
+
+          # Linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            args:
+            name: piton-linux_x64
+
+            #https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
+            container: quay.io/pypa/manylinux2014_x86_64
+            cargo: $HOME/.cargo/bin/cargo
+
+          # MacOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            args: -F gui
+            name: piton-gui-macos_x64
+
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        sparse-checkout: libs/source/Piton
+        submodules: true
+
+    - name: Setup Rust toolchain
+      if: ${{ matrix.container }}
+      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
+
+    - name: Build Piton binary
+      working-directory: libs/source/Piton
+      run: ${{ matrix.cargo || 'cargo' }} build --verbose --release --target ${{ matrix.target }} ${{ matrix.args }}
+
+    - name: Move Piton binary
+      working-directory: libs/source/Piton
+      run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.name }}
+  
+    - name: Upload Piton binaries
+      uses: actions/upload-artifact@v4
+      with:
+        name: piton-binaries
+        path: ${{ matrix.name }}
