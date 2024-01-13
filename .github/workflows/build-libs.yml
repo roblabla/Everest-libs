@@ -114,7 +114,7 @@ jobs:
         cp libs/source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: Everest-libs_linux-x64
         path: |
@@ -174,7 +174,7 @@ jobs:
         cp libs/source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: Everest-libs_macos-x64
         path: |
@@ -299,7 +299,7 @@ jobs:
         cp libs/source/FNA/lib/Theorafile/libtheorafile.dll libtheorafile.dll
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: Everest-libs_win32-${{matrix.env}}
         path: |
@@ -371,7 +371,7 @@ jobs:
     needs: [linux, macos, windows-mingw, piton-build]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v3
     - name: Display structure of downloaded files
       run: ls -R
     
