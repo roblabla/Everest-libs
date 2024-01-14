@@ -1,6 +1,10 @@
 name: Everest-libs build
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - .github/workflows/**
+      - libs/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -400,4 +404,4 @@ jobs:
         name: Everest-libs
         path: |
           lib-ext
-          !stub_artifact.txt
+          stub_artifact.txt
