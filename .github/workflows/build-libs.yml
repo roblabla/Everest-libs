@@ -43,15 +43,16 @@ jobs:
             platform: macos
             target: x86_64-apple-darwin
             shell: bash -e {0}
+            
+    name: FNAlibs (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+
     defaults:
       run:
         shell: ${{ matrix.shell }}
     env:
       build-type: Debug
 
-    name: ${{ matrix.name }}
-    
-    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -82,14 +83,13 @@ jobs:
           mingw-w64-${{ matrix.msys2_env }}-zlib
       if: ${{ matrix.platform == 'windows' }}
 
-    - name: Install dependencies + Vulkan and MoltenVK (macOS)
+    - name: Install dependencies (macOS)
       run: |
-        brew install vulkan-loader molten-vk
-
         # SDL2 dependencies
         brew install ninja
         # SDL2_image dependencies (https://github.com/libsdl-org/SDL_image/blob/0b79762f0a7da2aa05f0673d367994f7eb9ad812/.github/workflows/main.yml#L65-L81)
         brew install autoconf automake jpeg-turbo libavif libpng libtiff nasm webp
+        
       if: ${{ matrix.platform == 'macos' }}
 
     - name: Install dependencies (Linux)
@@ -235,12 +235,10 @@ jobs:
     - name: Copy binaries (macOS)
       run: |
         cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
-        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.0.dylib libSDL2_image-2.0.0.dylib
+        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.dylib libSDL2_image-2.0.0.dylib
         cp source/FNA/lib/FAudio/${{ env.build-type }}/libFAudio.0.dylib libFAudio.0.dylib
         cp source/FNA/lib/FNA3D/${{ env.build-type }}/libFNA3D.0.dylib libFNA3D.0.dylib
         cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
-        cp /usr/local/lib/libvulkan.1.dylib libvulkan.1.dylib 
-        cp /usr/local/lib/libMoltenVK.dylib libMoltenVK.dylib
       if: ${{ matrix.platform == 'macos' }}
 
     - name: Copy binaries (Linux)
@@ -292,6 +290,76 @@ jobs:
           libtheorafile.so
       if: ${{ matrix.platform == 'linux' }}
 
+  build-piton:
+    strategy:
+      matrix:
+        include:
+          - name: Windows x86
+            os: windows-latest
+            toolchain: 1.77.0-x86_64-pc-windows-msvc # Last version to support Windows 7
+            target: i686-pc-windows-msvc
+            ui: gui
+            lib_name: piton-gui-win_x86.exe
+
+          - name: Windows x64
+            os: windows-latest
+            toolchain: 1.77.0-x86_64-pc-windows-msvc # Last version to support Windows 7
+            target: x86_64-pc-windows-msvc
+            ui: gui
+            lib_name: piton-gui-win_x64.exe
+
+          - name: Linux x64
+            os: ubuntu-latest
+            toolchain: stable-x86_64-unknown-linux-gnu
+            target: x86_64-unknown-linux-gnu
+            ui: none
+            lib_name: piton-linux_x64
+            container: quay.io/pypa/manylinux_2_28_x86_64 #https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
+
+          - name: macOS x64
+            os: macos-latest
+            toolchain: stable-x86_64-apple-darwin
+            target: x86_64-apple-darwin
+            ui: gui
+            lib_name: piton-gui-macos_x64
+
+
+    name: Piton (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+
+    env:
+      CARGO_TERM_COLOR: always
+      MACOSX_DEPLOYMENT_TARGET: 10.12
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        sparse-checkout: source/Piton
+        submodules: true
+
+    - name: Setup environment variables
+      run: |
+        echo "RUSTUP_HOME=$HOME/.rustup" >> "$GITHUB_ENV"
+        echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
+
+    - name: Setup Rust toolchain
+      if: ${{ !steps.cache.outputs.cache-hit }}
+      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain ${{ matrix.toolchain }} --target ${{ matrix.target }} -y
+
+    - name: Build Piton binary
+      working-directory: source/Piton/apphost
+      run: ~/.cargo/bin/cargo build --verbose --release --target ${{ matrix.target }} -F ui-${{ matrix.ui }}
+
+    - name: Move Piton binary
+      working-directory: source/Piton/apphost
+      run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.lib_name }}
+  
+    - name: Upload Piton binaries
+      uses: actions/upload-artifact@v3
+      with:
+        name: piton-binaries
+        path: source/Piton/apphost/${{ matrix.lib_name }}
 
 
 
