@@ -1,4 +1,4 @@
-name: Everest-libs build
+name: Build Libraries
 
 on:
   push:
@@ -12,9 +12,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linux:
-    name: Linux
-    runs-on: ubuntu-latest
+  build-fnalibs:
+    strategy:
+      matrix:
+        include:
+          - name: Windows x86
+            os: windows-latest
+            platform: windows
+            target: i686-pc-windows-msvc
+            shell: msys2 {0}
+            msys2_system: mingw32
+            msys2_env: i686
+
+          - name: Windows x64
+            os: windows-latest
+            platform: windows
+            target: x86_64-pc-windows-msvc
+            shell: msys2 {0}
+            msys2_system: mingw64
+            msys2_env: x86_64
+
+          - name: Linux x64
+            os: ubuntu-latest
+            platform: linux
+            target: x86_64-unknown-linux-gnu
+            shell: bash -e {0}
+
+          - name: macOS x64
+            os: macos-latest
+            platform: macos
+            target: x86_64-apple-darwin
+            shell: bash -e {0}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    env:
+      build-type: Debug
+
+    name: ${{ matrix.name }}
+    
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -22,108 +59,227 @@ jobs:
           source
           patches
         submodules: recursive
-    
-    - name: Install dependencies
+
+    # Setup
+    - name: Set up MSYS2 (Windows)
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.msys2_system }}
+        install: >-
+          mingw-w64-${{ matrix.msys2_env }}-cc
+          mingw-w64-${{ matrix.msys2_env }}-cmake
+          mingw-w64-${{ matrix.msys2_env }}-gcc
+          mingw-w64-${{ matrix.msys2_env }}-make
+          mingw-w64-${{ matrix.msys2_env }}-ninja
+          mingw-w64-${{ matrix.msys2_env }}-pkg-config
+          mingw-w64-${{ matrix.msys2_env }}-nasm
+          mingw-w64-${{ matrix.msys2_env }}-libavif
+          mingw-w64-${{ matrix.msys2_env }}-libjpeg-turbo
+          mingw-w64-${{ matrix.msys2_env }}-libjxl
+          mingw-w64-${{ matrix.msys2_env }}-libpng
+          mingw-w64-${{ matrix.msys2_env }}-libtiff
+          mingw-w64-${{ matrix.msys2_env }}-libwebp
+          mingw-w64-${{ matrix.msys2_env }}-zlib
+      if: ${{ matrix.platform == 'windows' }}
+
+    - name: Install dependencies + Vulkan and MoltenVK (macOS)
+      run: |
+        brew install vulkan-loader molten-vk
+
+        # SDL2 dependencies
+        brew install ninja
+        # SDL2_image dependencies (https://github.com/libsdl-org/SDL_image/blob/0b79762f0a7da2aa05f0673d367994f7eb9ad812/.github/workflows/main.yml#L65-L81)
+        brew install autoconf automake jpeg-turbo libavif libpng libtiff nasm webp
+      if: ${{ matrix.platform == 'macos' }}
+
+    - name: Install dependencies (Linux)
       run: |
         sudo apt-get update
-        sudo apt-get install build-essential git make autoconf automake libtool \
+
+        # SDL2 dependencies (https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md)
+        sudo apt-get install build-essential git make \
             pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
-            libaudio-dev libjack-dev libsndio-dev libsamplerate0-dev libx11-dev libxext-dev \
-            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libwayland-dev \
+            libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
-            libpipewire-0.3-dev libdecor-0-dev \
-            libavif-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev nasm zlib1g-dev
-    
-    - uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8'
-    
-    - name: CMake configure SDL2 (Release)
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev
+        # SDL2_image dependencies (https://github.com/libsdl-org/SDL_image/blob/0b79762f0a7da2aa05f0673d367994f7eb9ad812/.github/workflows/main.yml#L82-L100)
+        sudo apt-get install autoconf automake libavif-dev libjpeg-dev libtiff-dev libtool libwebp-dev nasm zlib1g-dev
+      if: ${{ matrix.platform == 'linux' }}
+
+    # SDL2
+    - name: Configure SDL2
       working-directory: source/SDL2
       run: |
         cmake -S . -B build -G Ninja \
         -DSDL_VENDOR_INFO="Github Workflow" \
         -DCMAKE_INSTALL_PREFIX=cmake_prefix \
-        -DCMAKE_BUILD_TYPE=Release
-    
-    - name: Build SDL2 (Release)
+        -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+
+    - name: Build SDL2
       working-directory: source/SDL2
-      run: cmake --build build/ --config Release --verbose --parallel
+      run: cmake --build build/ --config ${{ env.build-type }} --verbose --parallel
 
     - name: Install SDL2
       working-directory: source/SDL2
       run: |
         set -eu
-        cmake --install build/ --config Release
+        cmake --install build/ --config ${{ env.build-type }}
         echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
         ( cd cmake_prefix; find ) | LC_ALL=C sort -u
 
-    - name: CMake configure SDL2_image (Release) 
+    # SDL2_image
+    - name: Configure SDL2_image
       working-directory: source/SDL2_image
       run: |
-        export CMAKE_CONFIGURATION_TYPES=Release
+        export CMAKE_CONFIGURATION_TYPES=${{ env.build-type }}
         cmake -B build -G Ninja \
-          -DSDL2IMAGE_VENDORED=1 \
           -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
-          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_BUILD_TYPE=${{ env.build-type }} \
           -DSDL2IMAGE_SAMPLES=ON \
           -DSDL2IMAGE_AVIF=ON \
           -DSDL2IMAGE_JXL=ON \
           -DSDL2IMAGE_TIF=ON \
           -DSDL2IMAGE_WEBP=ON \
+          -DSDL2IMAGE_VENDORED=ON \
           -DCMAKE_INSTALL_PREFIX=cmake_prefix
 
-    - name: Build SDL2_image (Release)
+    - name: Build SDL2_image
       working-directory: source/SDL2_image
-      run: cmake --build build/ --config Release --verbose --parallel
+      run: cmake --build build/ --config ${{ env.build-type }} --verbose --parallel
 
     - name: Install SDL2_image
       working-directory: source/SDL2_image
       run: |
         set -eu
-        cmake --install build/ --config Release
+        cmake --install build/ --config ${{ env.build-type }}
         echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
         ( cd cmake_prefix; find . ) | LC_ALL=C sort -u
 
-    - name: dotnet build FNA.Core
-      working-directory: source/FNA
-      run: dotnet build -c Release FNA.Core.csproj
-    
-    - name: CMake configure FAudio (Release)
+    # FAudio
+    - name: Configure FAudio (Windows)
       working-directory: source/FNA/lib/FAudio
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2.so
-
-    - name: Build FAudio (Release)
+      run: cmake -B ${{ env.build-type }} -G Ninja . -DCMAKE_BUILD_TYPE=${{ env.build-type }} -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/bin/SDL2.dll
+      if: ${{ matrix.platform == 'windows' }}
+      
+    - name: Configure FAudio (macOS)
       working-directory: source/FNA/lib/FAudio
-      run: ninja -C release
+      run: cmake -B ${{ env.build-type }} -G Ninja . -DCMAKE_BUILD_TYPE=${{ env.build-type }} -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.dylib
+      if: ${{ matrix.platform == 'macos' }}
+      
+    - name: Configure FAudio (Linux)
+      working-directory: source/FNA/lib/FAudio
+      run: cmake -B ${{ env.build-type }} -G Ninja . -DCMAKE_BUILD_TYPE=${{ env.build-type }} -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so
+      if: ${{ matrix.platform == 'linux' }}
 
-    - name: CMake configure FNA3D (Release)
+    - name: Build FAudio
+      working-directory: source/FNA/lib/FAudio
+      run: cmake --build ${{ env.build-type }}
+
+    # FNA3D
+    - name: Configure FNA3D (Windows)
       working-directory: source/FNA/lib/FNA3D
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2.so
+      run: cmake -B ${{ env.build-type }} -G Ninja . -DCMAKE_BUILD_TYPE=${{ env.build-type }} -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/bin/SDL2.dll
+      if: ${{ matrix.platform == 'windows' }}
 
-    - name: Build FNA3D (Release)
+    - name: Configure FNA3D (macOS
       working-directory: source/FNA/lib/FNA3D
-      run: ninja -C release
+      run: cmake -B ${{ env.build-type }} -G Ninja . -DCMAKE_BUILD_TYPE=${{ env.build-type }} -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.dylib
+      if: ${{ matrix.platform == 'macos' }}
 
-    - name: Build Theorafile
+    - name: Configure FNA3D (Linux)
+      working-directory: source/FNA/lib/FNA3D
+      run: cmake -B ${{ env.build-type }} -G Ninja . -DCMAKE_BUILD_TYPE=${{ env.build-type }} -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so
+      if: ${{ matrix.platform == 'linux' }}
+
+    - name: Build FNA3D
+      working-directory: source/FNA/lib/FNA3D
+      run: cmake --build ${{ env.build-type }}
+
+    # Theorafile
+    - name: Build Theorafile (Windows)
+      working-directory: source/FNA/lib/Theorafile
+      run: mingw32-make
+      if: ${{ matrix.platform == 'windows' }}
+      
+    - name: Build Theorafile (macOS & Linux)
       working-directory: source/FNA/lib/Theorafile
       run: make
+      if: ${{ matrix.platform != 'windows' }}
 
-    - name: Copy binaries
+    # FNA (Only built on Linux, due to being platform agnostic)
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8'
+      if: ${{ matrix.platform == 'linux' }}
+
+    - name: Build FNA
+      working-directory: source/FNA
+      run: dotnet build -c ${{ env.build-type }} FNA.Core.csproj
+      if: ${{ matrix.platform == 'linux' }}
+
+    # Upload
+    - name: Copy binaries (Windows)
       run: |
-        cp source/FNA/bin/Release/net7.0/FNA.dll FNA.dll
-        cp source/SDL2/cmake_prefix/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
-        cp source/SDL2_image/cmake_prefix/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
-        cp source/FNA/lib/FAudio/release/libFAudio.so.0 libFAudio.so.0
-        cp source/FNA/lib/FNA3D/release/libFNA3D.so.0 libFNA3D.so.0
-        cp source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
+        cp ${{ env.SDL2_DIR }}/bin/SDL2.dll SDL2.dll
+        cp ${{ env.SDL2_image_DIR }}/bin/SDL2_image.dll SDL2_image.dll
+        cp source/FNA/lib/FAudio/${{ env.build-type }}/FAudio.dll FAudio.dll
+        cp source/FNA/lib/FNA3D/${{ env.build-type }}/FNA3D.dll FNA3D.dll
+        cp source/FNA/lib/Theorafile/libtheorafile.dll libtheorafile.dll
+      if: ${{ matrix.platform == 'windows' }}
 
-    - name: Upload Artifacts
+    - name: Copy binaries (macOS)
+      run: |
+        cp ${{ env.SDL2_DIR }}lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
+        cp ${{ env.SDL2_image_DIR }}lib/libSDL2_image-2.0.0.dylib libSDL2_image-2.0.0.dylib
+        cp source/FNA/lib/FAudio/${{ env.build-type }}/libFAudio.0.dylib libFAudio.0.dylib
+        cp source/FNA/lib/FNA3D/${{ env.build-type }}/libFNA3D.0.dylib libFNA3D.0.dylib
+        cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
+        cp /usr/local/lib/libvulkan.1.dylib libvulkan.1.dylib 
+        cp /usr/local/lib/libMoltenVK.dylib libMoltenVK.dylib
+      if: ${{ matrix.platform == 'macos' }}
+
+    - name: Copy binaries (Linux)
+      run: |
+        cp source/FNA/bin/${{ env.build-type }}/net7.0/FNA.dll FNA.dll
+        cp ${{ env.SDL2_DIR }}lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
+        cp ${{ env.SDL2_image_DIR }}lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
+        cp source/FNA/lib/FAudio/${{ env.build-type }}/libFAudio.so.0 libFAudio.so.0
+        cp source/FNA/lib/FNA3D/${{ env.build-type }}/libFNA3D.so.0 libFNA3D.so.0
+        cp source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
+      if: ${{ matrix.platform == 'linux' }}
+
+    - name: Upload Artifacts (Windows)
       uses: actions/upload-artifact@v3
       with:
-        name: Everest-libs_linux-x64
+        name: Everest-libs_windows-${{ matrix.msys2_env }}
+        path: |
+          SDL2.dll
+          SDL2_image.dll
+          FAudio.dll
+          FNA3D.dll
+          libtheorafile.dll
+      if: ${{ matrix.platform == 'windows' }}
+
+    - name: Upload Artifacts (macOS)
+      uses: actions/upload-artifact@v3
+      with:
+        name: Everest-libs_macos-x86_64
+        path: |
+          libSDL2-2.0.0.dylib
+          libSDL2_image-2.0.0.dylib
+          libFAudio.0.dylib
+          libFNA3D.0.dylib
+          libtheorafile.dylib
+          libvulkan.1.dylib 
+          libMoltenVK.dylib
+      if: ${{ matrix.platform == 'macos' }}
+
+    - name: Upload Artifacts (Linux)
+      uses: actions/upload-artifact@v3
+      with:
+        name: Everest-libs_linux-x86_64
         path: |
           FNA.dll
           libSDL2-2.0.so.0
@@ -131,284 +287,15 @@ jobs:
           libFAudio.so.0
           libFNA3D.so.0
           libtheorafile.so
+      if: ${{ matrix.platform == 'linux' }}
 
-  macos:
-    name: macOS
-    runs-on: macos-latest
-    env:
-      CXXFLAGS: -I/usr/local/include/SDL2
-      LDFLAGS: -L/usr/local/lib
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          source/FNA
-          patches
-        submodules: recursive
+
+
+
+
+
+
     
-    - name: Install dependencies + Vulkan and MoltenVK
-      run: brew install ninja vulkan-loader molten-vk
 
-    - name: Build SDL2, SDL2_image, 
-      run: brew install --build-from-source sdl2 sdl2_image
 
-    - name: CMake configure FAudio (Release)
-      working-directory: source/FNA/lib/FAudio
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
-    - name: Build FAudio (Release)
-      working-directory: source/FNA/lib/FAudio
-      run: ninja -C release
-
-    - name: CMake configure FNA3D (Release)
-      working-directory: source/FNA/lib/FNA3D
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build FNA3D (Release)
-      working-directory: source/FNA/lib/FNA3D
-      run: ninja -C release
-
-    - name: Build Theorafile
-      working-directory: source/FNA/lib/Theorafile
-      run: make
-
-    - name: Copy binaries
-      run: |
-        cp /usr/local/lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
-        cp /usr/local/lib/libSDL2_image-2.0.0.dylib libSDL2_image-2.0.0.dylib
-        cp /usr/local/lib/libvulkan.1.dylib libvulkan.1.dylib 
-        cp /usr/local/lib/libMoltenVK.dylib libMoltenVK.dylib
-        cp source/FNA/lib/FAudio/release/libFAudio.0.dylib libFAudio.0.dylib
-        cp source/FNA/lib/FNA3D/release/libFNA3D.0.dylib libFNA3D.0.dylib
-        cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Everest-libs_macos-x64
-        path: |
-          libSDL2-2.0.0.dylib
-          libSDL2_image-2.0.0.dylib
-          libvulkan.1.dylib 
-          libMoltenVK.dylib
-          libFAudio.0.dylib
-          libFNA3D.0.dylib
-          libtheorafile.dylib
-  
-  windows-mingw:
-    name: Windows (MinGW)
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    strategy:
-      matrix:
-        include:
-          - { sys: mingw64, env: x86_64 }
-          - { sys: mingw32, env: i686 }
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          source/FNA
-          patches
-        submodules: recursive
-
-    - name: Set up MSYS2
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{matrix.sys}}
-        install: >-
-          mingw-w64-${{matrix.env}}-cc
-          mingw-w64-${{matrix.env}}-cmake
-          mingw-w64-${{matrix.env}}-gcc
-          mingw-w64-${{matrix.env}}-make
-          mingw-w64-${{matrix.env}}-ninja
-          mingw-w64-${{matrix.env}}-pkg-config
-          mingw-w64-${{matrix.env}}-nasm
-          mingw-w64-${{matrix.env}}-libavif
-          mingw-w64-${{matrix.env}}-libjpeg-turbo
-          mingw-w64-${{matrix.env}}-libjxl
-          mingw-w64-${{matrix.env}}-libpng
-          mingw-w64-${{matrix.env}}-libtiff
-          mingw-w64-${{matrix.env}}-libwebp
-          mingw-w64-${{matrix.env}}-zlib
-    
-    - name: CMake configure SDL2 (Release)
-      working-directory: source/SDL2
-      run: |
-        cmake -S . -B build -G Ninja \
-        -DSDL_VENDOR_INFO="Github Workflow" \
-        -DCMAKE_INSTALL_PREFIX=cmake_prefix \
-        -DCMAKE_BUILD_TYPE=Release
-    
-    - name: Build SDL2 (Release)
-      working-directory: source/SDL2
-      run: cmake --build build/ --config Release --verbose --parallel
-
-    - name: Install SDL2
-      working-directory: source/SDL2
-      run: |
-        set -eu
-        cmake --install build/ --config Release
-        echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
-        ( cd cmake_prefix; find ) | LC_ALL=C sort -u
-    
-    - name: CMake configure SDL2_image (Release) 
-      working-directory: source/SDL2_image
-      run: |
-        export CMAKE_CONFIGURATION_TYPES=Release
-        cmake -B build -G Ninja \
-          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
-          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DSDL2IMAGE_SAMPLES=ON \
-          -DSDL2IMAGE_AVIF=ON \
-          -DSDL2IMAGE_JXL=ON \
-          -DSDL2IMAGE_TIF=ON \
-          -DSDL2IMAGE_WEBP=ON \
-          -DCMAKE_INSTALL_PREFIX=cmake_prefix
-
-    - name: Build SDL2_image (Release)
-      working-directory: source/SDL2_image
-      run: cmake --build build/ --config Release --verbose --parallel
-
-    - name: Install SDL2_image
-      working-directory: source/SDL2_image
-      run: |
-        set -eu
-        cmake --install build/ --config Release
-        echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
-        ( cd cmake_prefix; find . ) | LC_ALL=C sort -u
-    
-    - name: CMake configure FAudio (Release)
-      working-directory: source/FNA/lib/FAudio
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/bin/SDL2.dll
-
-    - name: Build FAudio (Release)
-      working-directory: source/FNA/lib/FAudio
-      run: cmake --build release
-
-    - name: CMake configure FNA3D (Release)
-      working-directory: source/FNA/lib/FNA3D
-      run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/bin/SDL2.dll
-
-    - name: Build FNA3D (Release)
-      working-directory: source/FNA/lib/FNA3D
-      run: cmake --build release
-
-    - name: Build Theorafile
-      working-directory: source/FNA/lib/Theorafile
-      run: mingw32-make
-
-    - name: Copy binaries
-      run: |
-        cp source/SDL2/cmake_prefix/bin/SDL2.dll SDL2.dll
-        cp source/SDL2_image/cmake_prefix/bin/SDL2_image.dll SDL2_image.dll
-        cp source/FNA/lib/FAudio/release/FAudio.dll FAudio.dll
-        cp source/FNA/lib/FNA3D/release/FNA3D.dll FNA3D.dll
-        cp source/FNA/lib/Theorafile/libtheorafile.dll libtheorafile.dll
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Everest-libs_win32-${{matrix.env}}
-        path: |
-          SDL2.dll
-          SDL2_image.dll
-          FAudio.dll
-          FNA3D.dll
-          libtheorafile.dll
-  
-  piton-build:
-    strategy:
-      matrix:
-        include:
-          # Windows i686
-          - os: windows-latest
-            target: i686-pc-windows-msvc
-            args: -F gui
-            name: piton-gui-win_x86.exe
-
-          # Windows x64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: -F gui
-            name: piton-gui-win_x64.exe
-
-          # Linux
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            args:
-            name: piton-linux_x64
-
-            #https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
-            container: quay.io/pypa/manylinux2014_x86_64
-            cargo: $HOME/.cargo/bin/cargo
-
-          # MacOS
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            args: -F gui
-            name: piton-gui-macos_x64
-
-    runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        sparse-checkout: source/Piton
-        submodules: true
-
-    - name: Setup Rust toolchain
-      if: ${{ matrix.container }}
-      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
-
-    - name: Build Piton binary
-      working-directory: source/Piton
-      run: ${{ matrix.cargo || 'cargo' }} build --verbose --release --target ${{ matrix.target }} ${{ matrix.args }}
-
-    - name: Move Piton binary
-      working-directory: source/Piton
-      run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.name }}
-  
-    - name: Upload Piton binaries
-      uses: actions/upload-artifact@v3
-      with:
-        name: piton-binaries
-        path: source/Piton/${{ matrix.name }}
-  
-  release-bins:
-    needs: [linux, macos, windows-mingw, piton-build]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/download-artifact@v3
-    - name: Display structure of downloaded files
-      run: ls -R
-    
-    - name: Create the new folder structure
-      run: |
-        mkdir -p lib-ext/lib-vanilla/lib64/ lib-ext/lib-vanilla/osx/ lib-ext/lib-vanilla/osx/
-
-    - name: Copy the files to their right location
-      run: |
-        mv Everest-libs_linux-x64 lib-ext/lib64-linux
-        mv lib-ext/lib64-linux/FNA.dll lib-ext/FNA.dll 
-        mv Everest-libs_macos-x64 lib-ext/lib64-osx
-        mv Everest-libs_win32-x86_64 lib-ext/lib64-win-x64
-        mv Everest-libs_win32-i686 lib-ext/lib64-win-x86
-        mv piton-binaries lib-ext/piton
-    
-    - name: Display the new structure
-      run: ls -R
-
-    - name: Build stub artifact
-      run: echo "stub" > stub_artifact.txt
-      # https://github.com/actions/upload-artifact/issues/174#issuecomment-934330651
-    
-    - uses: actions/upload-artifact@v4
-      with:
-        name: Everest-libs
-        path: |
-          lib-ext
-          stub_artifact.txt
