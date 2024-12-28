@@ -315,14 +315,14 @@ jobs:
             target: x86_64-unknown-linux-gnu
             ui: none
             lib_name: piton-linux_x64
-            container: quay.io/pypa/manylinux_2_28_x86_64 #https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
+            container: quay.io/pypa/manylinux_2_28_x86_64 # See https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
 
-          # - name: macOS x64
-          #   os: macos-latest
-          #   toolchain: stable-x86_64-apple-darwin
-          #   target: x86_64-apple-darwin
-          #   ui: gui
-          #   lib_name: piton-gui-macos_x64
+          - name: macOS x64
+            os: macos-latest
+            toolchain: stable-x86_64-apple-darwin
+            target: x86_64-apple-darwin
+            ui: gui
+            lib_name: piton-gui-macos_x64
 
 
     name: Piton (${{ matrix.name }})
@@ -381,19 +381,45 @@ jobs:
         with:
           path: ../binaries
           
+      - name: Download Discord Game SDK v3.2.1
+        run: |
+          wget https://dl-game-sdk.discordapp.net/3.2.1/discord_game_sdk.zip --output-document ../binaries/discord_game_sdk.zip
+          unzip ../binaries/discord_game_sdk.zip -d ../binaries/discord_game_sdk
+
       - name: Display structure of downloaded files
         run: ls -R ../binaries
 
-      - name: Setup file structure
+      - name: Setup lib-ext
         run: |
+          ### Directory structure
+          mkdir -p ../lib-ext/lib-vanilla
+          mkdir -p ../lib-ext/lib-vanilla/osx
+          mkdir -p ../lib-ext/lib-vanilla/lib
+          mkdir -p ../lib-ext/lib-vanilla/lib64
+
+          mkdir -p ../lib-ext/lib64-win-x86
+          mkdir -p ../lib-ext/lib64-win-x64
+          mkdir -p ../lib-ext/lib64-osx
+          mkdir -p ../lib-ext/lib64-linux
+         
+          ### Vendored files
           cp README_lib-ext.md ../lib-ext/README.md
+
+          # Windows x86
+          cp binaries/steamworks/windows-x86/CSteamworks.dll ../lib-ext/lib64-win-x86
+
+          # Windows x64
+          cp binaries/steamworks/windows-x64/CSteamworks.dll ../lib-ext/lib64-win-x64
+          cp binaries/steamworks/windows-x64/steam_api64.dll ../lib-ext/lib64-win-x64
+          cp binaries/fmod/windows-x64/fmod64.dll ../lib-ext/lib64-win-x64
+          cp binaries/fmod/windows-x64/fmodstudio64.dll ../lib-ext/lib64-win-x64
+
+          # Piton
           cp source/Piton/apphost/test/piton-runtime.yaml ../lib-ext/piton-runtime.yaml
 
           pushd ../lib-ext
           
           ### Vanilla overrides
-          mkdir -p lib-vanilla
-
           cp ../binaries/fnalibs-linux-x86_64/FNA.dll lib-vanilla
 
           # Windows x86
@@ -409,17 +435,22 @@ jobs:
           cp ../binaries/fnalibs-macos-x86_64/libtheorafile.dylib lib-vanilla/osx
 
           # Linux x64
-          cp ../binaries/fnalibs-linux-x86_64/libSDL2-2.0.so.0 lib64
-          cp ../binaries/fnalibs-linux-x86_64/libSDL2_image-2.0.so.0 lib64
-          cp ../binaries/fnalibs-linux-x86_64/libFAudio.so.0 lib64
-          cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib64
-          cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib64
+          cp ../binaries/fnalibs-linux-x86_64/libSDL2-2.0.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libSDL2_image-2.0.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libFAudio.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib-vanilla/lib64
 
           ### Everest Libraries
-          mv ../binaries/fnalibs-windows-i686 lib64-win-x86
-          mv ../binaries/fnalibs-windows-x86_64 lib64-win-x64
-          mv ../binaries/fnalibs-macos-x86_64 lib64-osx
-          mv ../binaries/fnalibs-linux-x86_64 lib64-linux
+          mv ../binaries/fnalibs-windows-i686/* lib64-win-x86
+          mv ../binaries/fnalibs-windows-x86_64/* lib64-win-x64
+          mv ../binaries/fnalibs-macos-x86_64/* lib64-osx
+          mv ../binaries/fnalibs-linux-x86_64/* lib64-linux
+
+          cp ../binaries/discord_game_sdk/lib/x86/discord_game_sdk.dll lib64-win-x86
+          cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.dll lib64-win-x64
+          cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.dylib lib64-osx/libdiscord_game_sdk.dylib
+          cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.so lib64-linux/libdiscord_game_sdk.so
 
           ### Piton
           mv ../binaries/piton-apphosts piton
