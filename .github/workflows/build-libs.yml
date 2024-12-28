@@ -113,6 +113,7 @@ jobs:
       run: |
         cmake -S . -B build -G Ninja \
         -DSDL_VENDOR_INFO="Github Workflow" \
+        -DSDL_CMAKE_DEBUG_POSTFIX="" \
         -DCMAKE_INSTALL_PREFIX=cmake_prefix \
         -DCMAKE_BUILD_TYPE=${{ env.build-type }}
 
@@ -133,16 +134,18 @@ jobs:
       working-directory: source/SDL2_image
       run: |
         export CMAKE_CONFIGURATION_TYPES=${{ env.build-type }}
+        # JPEG-XL is disabled, because it's causing issues on macOS
         cmake -B build -G Ninja \
           -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_BUILD_TYPE=${{ env.build-type }} \
           -DSDL2IMAGE_SAMPLES=ON \
           -DSDL2IMAGE_AVIF=ON \
-          -DSDL2IMAGE_JXL=ON \
+          -DSDL2IMAGE_JXL=OFF \
           -DSDL2IMAGE_TIF=ON \
           -DSDL2IMAGE_WEBP=ON \
           -DSDL2IMAGE_VENDORED=ON \
+          -DSDL2IMAGE_DEBUG_POSTFIX="" \
           -DCMAKE_INSTALL_PREFIX=cmake_prefix
 
     - name: Build SDL2_image
@@ -231,8 +234,8 @@ jobs:
 
     - name: Copy binaries (macOS)
       run: |
-        cp ${{ env.SDL2_DIR }}lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
-        cp ${{ env.SDL2_image_DIR }}lib/libSDL2_image-2.0.0.dylib libSDL2_image-2.0.0.dylib
+        cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
+        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.0.dylib libSDL2_image-2.0.0.dylib
         cp source/FNA/lib/FAudio/${{ env.build-type }}/libFAudio.0.dylib libFAudio.0.dylib
         cp source/FNA/lib/FNA3D/${{ env.build-type }}/libFNA3D.0.dylib libFNA3D.0.dylib
         cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
@@ -243,8 +246,8 @@ jobs:
     - name: Copy binaries (Linux)
       run: |
         cp source/FNA/bin/${{ env.build-type }}/net7.0/FNA.dll FNA.dll
-        cp ${{ env.SDL2_DIR }}lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
-        cp ${{ env.SDL2_image_DIR }}lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
+        cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
+        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
         cp source/FNA/lib/FAudio/${{ env.build-type }}/libFAudio.so.0 libFAudio.so.0
         cp source/FNA/lib/FNA3D/${{ env.build-type }}/libFNA3D.so.0 libFNA3D.so.0
         cp source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
