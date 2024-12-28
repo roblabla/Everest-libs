@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build-fnalibs:
     strategy:
@@ -254,7 +257,7 @@ jobs:
     - name: Upload Artifacts (Windows)
       uses: actions/upload-artifact@v3
       with:
-        name: Everest-libs_windows-${{ matrix.msys2_env }}
+        name: fnalibs-windows-${{ matrix.msys2_env }}
         path: |
           SDL2.dll
           SDL2_image.dll
@@ -266,21 +269,19 @@ jobs:
     - name: Upload Artifacts (macOS)
       uses: actions/upload-artifact@v3
       with:
-        name: Everest-libs_macos-x86_64
+        name: fnalibs-macos-x86_64
         path: |
           libSDL2-2.0.0.dylib
           libSDL2_image-2.0.0.dylib
           libFAudio.0.dylib
           libFNA3D.0.dylib
           libtheorafile.dylib
-          libvulkan.1.dylib 
-          libMoltenVK.dylib
       if: ${{ matrix.platform == 'macos' }}
 
     - name: Upload Artifacts (Linux)
       uses: actions/upload-artifact@v3
       with:
-        name: Everest-libs_linux-x86_64
+        name: fnalibs-linux-x86_64
         path: |
           FNA.dll
           libSDL2-2.0.so.0
@@ -316,12 +317,12 @@ jobs:
             lib_name: piton-linux_x64
             container: quay.io/pypa/manylinux_2_28_x86_64 #https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
 
-          - name: macOS x64
-            os: macos-latest
-            toolchain: stable-x86_64-apple-darwin
-            target: x86_64-apple-darwin
-            ui: gui
-            lib_name: piton-gui-macos_x64
+          # - name: macOS x64
+          #   os: macos-latest
+          #   toolchain: stable-x86_64-apple-darwin
+          #   target: x86_64-apple-darwin
+          #   ui: gui
+          #   lib_name: piton-gui-macos_x64
 
 
     name: Piton (${{ matrix.name }})
@@ -358,9 +359,98 @@ jobs:
     - name: Upload Piton binaries
       uses: actions/upload-artifact@v3
       with:
-        name: piton-binaries
+        name: piton-apphosts
         path: source/Piton/apphost/${{ matrix.lib_name }}
 
+  generate-lib-ext:
+    name: Generate lib-ext
+    runs-on: ubuntu-latest
+    needs: [build-fnalibs, build-piton]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup file structure
+        run: |
+          rm -rf ../lib-ext ../binaries
+          mkdir ../lib-ext ../binaries
+  
+      - uses: actions/download-artifact@v3
+        with:
+          path: ../binaries
+          
+      - name: Display structure of downloaded files
+        run: ls -R ../binaries
+
+      - name: Setup file structure
+        run: |
+          cp README_lib-ext.md ../lib-ext/README.md
+          cp source/Piton/apphost/test/piton-runtime.yaml ../lib-ext/piton-runtime.yaml
+
+          pushd ../lib-ext
+          
+          ### Vanilla overrides
+          mkdir -p lib-vanilla
+
+          cp ../binaries/fnalibs-linux-x86_64/FNA.dll lib-vanilla
+
+          # Windows x86
+          cp ../binaries/fnalibs-windows-i686/FNA3D.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/FAudio.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/SDL2.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/libtheorafile.dll lib-vanilla
+
+          # macOS x64
+          cp ../binaries/fnalibs-macos-x86_64/libFNA3D.0.dylib lib-vanilla/osx
+          cp ../binaries/fnalibs-macos-x86_64/libFAudio.0.dylib lib-vanilla/osx
+          cp ../binaries/fnalibs-macos-x86_64/libSDL2-2.0.0.dylib lib-vanilla/osx
+          cp ../binaries/fnalibs-macos-x86_64/libtheorafile.dylib lib-vanilla/osx
+
+          # Linux x64
+          cp ../binaries/fnalibs-linux-x86_64/libSDL2-2.0.so.0 lib64
+          cp ../binaries/fnalibs-linux-x86_64/libSDL2_image-2.0.so.0 lib64
+          cp ../binaries/fnalibs-linux-x86_64/libFAudio.so.0 lib64
+          cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib64
+          cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib64
+
+          ### Everest Libraries
+          mv ../binaries/fnalibs-windows-i686 lib64-win-x86
+          mv ../binaries/fnalibs-windows-x86_64 lib64-win-x64
+          mv ../binaries/fnalibs-macos-x86_64 lib64-osx
+          mv ../binaries/fnalibs-linux-x86_64 lib64-linux
+
+          ### Piton
+          mv ../binaries/piton-apphosts piton
+
+          popd
+
+      - name: Display the new structure
+        run: ls -R ../lib-ext
+
+      - name: Commit binaries to repository
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          
+          git checkout -b binaries
+          git fetch origin binaries
+          git reset --hard origin/binaries
+          
+          rm -rf *
+          cp -r ../lib-ext/* .
+
+          git add -f .
+          git commit -m "Update binaries for ${{ github.sha}}" || true
+          git push origin binaries
+
+          
+
+
+
+
+    
 
 
 
