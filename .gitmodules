@@ -1,12 +1,12 @@
 [submodule "FNA"]
-	path = libs/source/FNA
+	path = source/FNA
 	url = https://github.com/FNA-XNA/FNA
 [submodule "SDL2"]
-	path = libs/source/SDL2
+	path = source/SDL2
 	url = https://github.com/libsdl-org/SDL/
 [submodule "SDL2_image"]
-	path = libs/source/SDL2_image
+	path = source/SDL2_image
 	url = https://github.com/libsdl-org/SDL_image/
 [submodule "Piton"]
-	path = libs/source/Piton
+	path = source/Piton
 	url = https://github.com/EverestAPI/Piton

@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - .github/workflows/**
-      - libs/**
+      - source/**
+      - patches/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        sparse-checkout: libs/source
+        sparse-checkout: |
+          source
+          patches
         submodules: recursive
     
     - name: Install dependencies
@@ -37,7 +40,7 @@ jobs:
         dotnet-version: '8'
     
     - name: CMake configure SDL2 (Release)
-      working-directory: libs/source/SDL2
+      working-directory: source/SDL2
       run: |
         cmake -S . -B build -G Ninja \
         -DSDL_VENDOR_INFO="Github Workflow" \
@@ -45,11 +48,11 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release
     
     - name: Build SDL2 (Release)
-      working-directory: libs/source/SDL2
+      working-directory: source/SDL2
       run: cmake --build build/ --config Release --verbose --parallel
 
     - name: Install SDL2
-      working-directory: libs/source/SDL2
+      working-directory: source/SDL2
       run: |
         set -eu
         cmake --install build/ --config Release
@@ -57,7 +60,7 @@ jobs:
         ( cd cmake_prefix; find ) | LC_ALL=C sort -u
 
     - name: CMake configure SDL2_image (Release) 
-      working-directory: libs/source/SDL2_image
+      working-directory: source/SDL2_image
       run: |
         export CMAKE_CONFIGURATION_TYPES=Release
         cmake -B build -G Ninja \
@@ -73,11 +76,11 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=cmake_prefix
 
     - name: Build SDL2_image (Release)
-      working-directory: libs/source/SDL2_image
+      working-directory: source/SDL2_image
       run: cmake --build build/ --config Release --verbose --parallel
 
     - name: Install SDL2_image
-      working-directory: libs/source/SDL2_image
+      working-directory: source/SDL2_image
       run: |
         set -eu
         cmake --install build/ --config Release
@@ -85,37 +88,37 @@ jobs:
         ( cd cmake_prefix; find . ) | LC_ALL=C sort -u
 
     - name: dotnet build FNA.Core
-      working-directory: libs/source/FNA
+      working-directory: source/FNA
       run: dotnet build -c Release FNA.Core.csproj
     
     - name: CMake configure FAudio (Release)
-      working-directory: libs/source/FNA/lib/FAudio
+      working-directory: source/FNA/lib/FAudio
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2.so
 
     - name: Build FAudio (Release)
-      working-directory: libs/source/FNA/lib/FAudio
+      working-directory: source/FNA/lib/FAudio
       run: ninja -C release
 
     - name: CMake configure FNA3D (Release)
-      working-directory: libs/source/FNA/lib/FNA3D
+      working-directory: source/FNA/lib/FNA3D
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/lib/libSDL2.so
 
     - name: Build FNA3D (Release)
-      working-directory: libs/source/FNA/lib/FNA3D
+      working-directory: source/FNA/lib/FNA3D
       run: ninja -C release
 
     - name: Build Theorafile
-      working-directory: libs/source/FNA/lib/Theorafile
+      working-directory: source/FNA/lib/Theorafile
       run: make
 
     - name: Copy binaries
       run: |
-        cp libs/source/FNA/bin/Release/net7.0/FNA.dll FNA.dll
-        cp libs/source/SDL2/cmake_prefix/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
-        cp libs/source/SDL2_image/cmake_prefix/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
-        cp libs/source/FNA/lib/FAudio/release/libFAudio.so.0 libFAudio.so.0
-        cp libs/source/FNA/lib/FNA3D/release/libFNA3D.so.0 libFNA3D.so.0
-        cp libs/source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
+        cp source/FNA/bin/Release/net7.0/FNA.dll FNA.dll
+        cp source/SDL2/cmake_prefix/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
+        cp source/SDL2_image/cmake_prefix/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
+        cp source/FNA/lib/FAudio/release/libFAudio.so.0 libFAudio.so.0
+        cp source/FNA/lib/FNA3D/release/libFNA3D.so.0 libFNA3D.so.0
+        cp source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
@@ -138,7 +141,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        sparse-checkout: libs/source/FNA
+        sparse-checkout: |
+          source/FNA
+          patches
         submodules: recursive
     
     - name: Install dependencies + Vulkan and MoltenVK
@@ -148,23 +153,23 @@ jobs:
       run: brew install --build-from-source sdl2 sdl2_image
 
     - name: CMake configure FAudio (Release)
-      working-directory: libs/source/FNA/lib/FAudio
+      working-directory: source/FNA/lib/FAudio
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build FAudio (Release)
-      working-directory: libs/source/FNA/lib/FAudio
+      working-directory: source/FNA/lib/FAudio
       run: ninja -C release
 
     - name: CMake configure FNA3D (Release)
-      working-directory: libs/source/FNA/lib/FNA3D
+      working-directory: source/FNA/lib/FNA3D
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build FNA3D (Release)
-      working-directory: libs/source/FNA/lib/FNA3D
+      working-directory: source/FNA/lib/FNA3D
       run: ninja -C release
 
     - name: Build Theorafile
-      working-directory: libs/source/FNA/lib/Theorafile
+      working-directory: source/FNA/lib/Theorafile
       run: make
 
     - name: Copy binaries
@@ -173,9 +178,9 @@ jobs:
         cp /usr/local/lib/libSDL2_image-2.0.0.dylib libSDL2_image-2.0.0.dylib
         cp /usr/local/lib/libvulkan.1.dylib libvulkan.1.dylib 
         cp /usr/local/lib/libMoltenVK.dylib libMoltenVK.dylib
-        cp libs/source/FNA/lib/FAudio/release/libFAudio.0.dylib libFAudio.0.dylib
-        cp libs/source/FNA/lib/FNA3D/release/libFNA3D.0.dylib libFNA3D.0.dylib
-        cp libs/source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
+        cp source/FNA/lib/FAudio/release/libFAudio.0.dylib libFAudio.0.dylib
+        cp source/FNA/lib/FNA3D/release/libFNA3D.0.dylib libFNA3D.0.dylib
+        cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
@@ -204,7 +209,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        sparse-checkout: libs/source/FNA
+        sparse-checkout: |
+          source/FNA
+          patches
         submodules: recursive
 
     - name: Set up MSYS2
@@ -228,7 +235,7 @@ jobs:
           mingw-w64-${{matrix.env}}-zlib
     
     - name: CMake configure SDL2 (Release)
-      working-directory: libs/source/SDL2
+      working-directory: source/SDL2
       run: |
         cmake -S . -B build -G Ninja \
         -DSDL_VENDOR_INFO="Github Workflow" \
@@ -236,11 +243,11 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release
     
     - name: Build SDL2 (Release)
-      working-directory: libs/source/SDL2
+      working-directory: source/SDL2
       run: cmake --build build/ --config Release --verbose --parallel
 
     - name: Install SDL2
-      working-directory: libs/source/SDL2
+      working-directory: source/SDL2
       run: |
         set -eu
         cmake --install build/ --config Release
@@ -248,7 +255,7 @@ jobs:
         ( cd cmake_prefix; find ) | LC_ALL=C sort -u
     
     - name: CMake configure SDL2_image (Release) 
-      working-directory: libs/source/SDL2_image
+      working-directory: source/SDL2_image
       run: |
         export CMAKE_CONFIGURATION_TYPES=Release
         cmake -B build -G Ninja \
@@ -263,11 +270,11 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=cmake_prefix
 
     - name: Build SDL2_image (Release)
-      working-directory: libs/source/SDL2_image
+      working-directory: source/SDL2_image
       run: cmake --build build/ --config Release --verbose --parallel
 
     - name: Install SDL2_image
-      working-directory: libs/source/SDL2_image
+      working-directory: source/SDL2_image
       run: |
         set -eu
         cmake --install build/ --config Release
@@ -275,32 +282,32 @@ jobs:
         ( cd cmake_prefix; find . ) | LC_ALL=C sort -u
     
     - name: CMake configure FAudio (Release)
-      working-directory: libs/source/FNA/lib/FAudio
+      working-directory: source/FNA/lib/FAudio
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/bin/SDL2.dll
 
     - name: Build FAudio (Release)
-      working-directory: libs/source/FNA/lib/FAudio
+      working-directory: source/FNA/lib/FAudio
       run: cmake --build release
 
     - name: CMake configure FNA3D (Release)
-      working-directory: libs/source/FNA/lib/FNA3D
+      working-directory: source/FNA/lib/FNA3D
       run: cmake -B release -G Ninja . -DCMAKE_BUILD_TYPE=Release -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 -DSDL2_LIBRARIES=${{ env.SDL2_DIR }}/bin/SDL2.dll
 
     - name: Build FNA3D (Release)
-      working-directory: libs/source/FNA/lib/FNA3D
+      working-directory: source/FNA/lib/FNA3D
       run: cmake --build release
 
     - name: Build Theorafile
-      working-directory: libs/source/FNA/lib/Theorafile
+      working-directory: source/FNA/lib/Theorafile
       run: mingw32-make
 
     - name: Copy binaries
       run: |
-        cp libs/source/SDL2/cmake_prefix/bin/SDL2.dll SDL2.dll
-        cp libs/source/SDL2_image/cmake_prefix/bin/SDL2_image.dll SDL2_image.dll
-        cp libs/source/FNA/lib/FAudio/release/FAudio.dll FAudio.dll
-        cp libs/source/FNA/lib/FNA3D/release/FNA3D.dll FNA3D.dll
-        cp libs/source/FNA/lib/Theorafile/libtheorafile.dll libtheorafile.dll
+        cp source/SDL2/cmake_prefix/bin/SDL2.dll SDL2.dll
+        cp source/SDL2_image/cmake_prefix/bin/SDL2_image.dll SDL2_image.dll
+        cp source/FNA/lib/FAudio/release/FAudio.dll FAudio.dll
+        cp source/FNA/lib/FNA3D/release/FNA3D.dll FNA3D.dll
+        cp source/FNA/lib/Theorafile/libtheorafile.dll libtheorafile.dll
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
@@ -350,7 +357,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        sparse-checkout: libs/source/Piton
+        sparse-checkout: source/Piton
         submodules: true
 
     - name: Setup Rust toolchain
@@ -358,18 +365,18 @@ jobs:
       run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
 
     - name: Build Piton binary
-      working-directory: libs/source/Piton
+      working-directory: source/Piton
       run: ${{ matrix.cargo || 'cargo' }} build --verbose --release --target ${{ matrix.target }} ${{ matrix.args }}
 
     - name: Move Piton binary
-      working-directory: libs/source/Piton
+      working-directory: source/Piton
       run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.name }}
   
     - name: Upload Piton binaries
       uses: actions/upload-artifact@v3
       with:
         name: piton-binaries
-        path: libs/source/Piton/${{ matrix.name }}
+        path: source/Piton/${{ matrix.name }}
   
   release-bins:
     needs: [linux, macos, windows-mingw, piton-build]
