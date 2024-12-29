@@ -285,6 +285,7 @@ jobs:
       if: ${{ matrix.platform == 'linux' }}
       run: |
         cp source/FNA/bin/${{ env.build-type }}/net7.0/FNA.dll FNA.dll
+        cp source/FNA/bin/${{ env.build-type }}/net7.0/FNA.pdb FNA.pdb
         cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
         cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
         cp source/FNA/lib/FAudio/build/libFAudio.so.0 libFAudio.so.0
@@ -443,6 +444,7 @@ jobs:
          
           ### Vendored files
           cp README_lib-ext.md ../lib-ext/README.md
+          cp source/SDL_GameControllerDB/gamecontrollerdb.txt ../lib-ext
 
           # Windows x86
           cp binaries/steamworks/windows-x86/CSteamworks.dll ../lib-ext/lib64-win-x86
@@ -460,6 +462,7 @@ jobs:
           
           ### Vanilla overrides
           cp ../binaries/fnalibs-linux-x86_64/FNA.dll lib-vanilla
+          cp ../binaries/fnalibs-linux-x86_64/FNA.pdb lib-vanilla
 
           # Windows x86
           cp ../binaries/fnalibs-windows-i686/FNA3D.dll lib-vanilla
@@ -482,8 +485,10 @@ jobs:
           cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib-vanilla/lib64
           cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib-vanilla/lib64
 
-          # ### Everest Libraries
+          ### Everest Libraries
           mv ../binaries/fnalibs-linux-x86_64/FNA.dll .
+          mv ../binaries/fnalibs-linux-x86_64/FNA.pdb .
+
           mv ../binaries/fnalibs-windows-i686/* lib64-win-x86
           mv ../binaries/fnalibs-windows-x86_64/* lib64-win-x64
           mv ../binaries/fnalibs-macos-x86_64/* lib64-osx

@@ -19,3 +19,6 @@
 [submodule "source/Vulkan-Loader"]
 	path = source/Vulkan-Loader
 	url = https://github.com/KhronosGroup/Vulkan-Loader
+[submodule "source/SDL_GameControllerDB"]
+	path = source/SDL_GameControllerDB
+	url = https://github.com/mdqinc/SDL_GameControllerDB
