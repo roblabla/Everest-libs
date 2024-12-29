@@ -10,3 +10,12 @@
 [submodule "Piton"]
 	path = source/Piton
 	url = https://github.com/EverestAPI/Piton
+[submodule "source/MoltenVK"]
+	path = source/MoltenVK
+	url = https://github.com/KhronosGroup/MoltenVK
+[submodule "source/Vulkan-Headers"]
+	path = source/Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers
+[submodule "source/Vulkan-Loader"]
+	path = source/Vulkan-Loader
+	url = https://github.com/KhronosGroup/Vulkan-Loader

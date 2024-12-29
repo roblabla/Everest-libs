@@ -13,6 +13,8 @@ These libraries are open source and are built in CI.
 - FNA3D `24.01`
 - FAudio `24.01`
 - Theorafile [48d74af](https://github.com/FNA-XNA/Theorafile/tree/48d74afcbf838fe95ca56cec142efae07bb56f65)
+- MoltenVK `1.2.11`
+- Vulkan Loader `1.3.296`
 - Piton [21c7868](https://github.com/EverestAPI/Piton/tree/21c7868d06007f0c5e7d9030a0109fe892df1bf3)
 
 ### Closed-Source Libraries
