@@ -46,7 +46,7 @@ jobs:
       run:
         shell: sh
     env:
-      build-type: Debug
+      BUILD_TYPE: Release
 
     steps:
     - uses: actions/checkout@v4
@@ -116,17 +116,17 @@ jobs:
           -DSDL_CMAKE_DEBUG_POSTFIX="" \
           -DSDL_FORCE_STATIC_VCRT=ON \
           -DCMAKE_INSTALL_PREFIX=cmake_prefix \
-          -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
     - name: Build SDL2
       working-directory: source/SDL2
-      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
 
     - name: Install SDL2
       working-directory: source/SDL2
       run: |
         set -eu
-        cmake --install build --config ${{ env.build-type }}
+        cmake --install build --config ${{ env.BUILD_TYPE }}
         echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
 
     - name: Export SDL2 library path (Windows)
@@ -145,7 +145,7 @@ jobs:
     - name: Configure SDL2_image
       working-directory: source/SDL2_image
       run: |
-        export CMAKE_CONFIGURATION_TYPES=${{ env.build-type }}
+        export CMAKE_CONFIGURATION_TYPES=${{ env.BUILD_TYPE }}
         # JPEG-XL is disabled, because it's causing issues on macOS
         cmake -B build -G Ninja \
           -DSDL2IMAGE_SAMPLES=ON \
@@ -159,17 +159,17 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=cmake_prefix \
           -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
           -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
-          -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
     - name: Build SDL2_image
       working-directory: source/SDL2_image
-      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
 
     - name: Install SDL2_image
       working-directory: source/SDL2_image
       run: |
         set -eu
-        cmake --install build --config ${{ env.build-type }}
+        cmake --install build --config ${{ env.BUILD_TYPE }}
         echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
 
     # FNA3D + FAudio
@@ -197,11 +197,11 @@ jobs:
              -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
              -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
              -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-             -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
     - name: Build FNA3D
       working-directory: source/FNA/lib/FNA3D
-      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
 
     # FAudio
     - name: Configure FAudio
@@ -211,11 +211,11 @@ jobs:
              -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
              -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
              -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-             -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
       
     - name: Build FAudio
       working-directory: source/FNA/lib/FAudio
-      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
 
     # Theorafile
     - name: Build Theorafile (Windows)
@@ -262,7 +262,7 @@ jobs:
     - name: Build FNA
       if: ${{ matrix.platform == 'linux' }}
       working-directory: source/FNA
-      run: dotnet build -c ${{ env.build-type }} FNA.Core.csproj
+      run: dotnet build -c ${{ env.BUILD_TYPE }} FNA.Core.csproj
 
     # Upload
     - name: Copy binaries (Windows)
@@ -288,8 +288,8 @@ jobs:
     - name: Copy binaries (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
-        cp source/FNA/bin/${{ env.build-type }}/net7.0/FNA.dll FNA.dll
-        cp source/FNA/bin/${{ env.build-type }}/net7.0/FNA.pdb FNA.pdb
+        cp source/FNA/bin/${{ env.BUILD_TYPE }}/net7.0/FNA.dll FNA.dll
+        cp source/FNA/bin/${{ env.BUILD_TYPE }}/net7.0/FNA.pdb FNA.pdb
         cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
         cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
         cp source/FNA/lib/FAudio/build/libFAudio.so.0 libFAudio.so.0
