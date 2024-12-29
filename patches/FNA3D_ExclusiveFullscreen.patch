@@ -1,4 +1,4 @@
-From e730d06bb6a010d9ee5d8bdb7cd6ea11b25537f5 Mon Sep 17 00:00:00 2001
+From 3936e0cd807728af40e8c2ea660e22c4912e4831 Mon Sep 17 00:00:00 2001
 From: Popax21 <popa21@popa21.at>
 Date: Sun, 29 Dec 2024 22:35:29 +0100
 Subject: [PATCH] Fix input latency by enabling use of exclusive
@@ -8,7 +8,7 @@ Subject: [PATCH] Fix input latency by enabling use of exclusive
  1 file changed, 266 insertions(+), 5 deletions(-)
 
 diff --git a/src/FNA3D_Driver_D3D11.c b/src/FNA3D_Driver_D3D11.c
-index 1001773..9b2cab5 100644
+index 1001773..1eb19fb 100644
 --- a/src/FNA3D_Driver_D3D11.c
 +++ b/src/FNA3D_Driver_D3D11.c
 @@ -51,6 +51,14 @@
@@ -76,7 +76,7 @@ index 1001773..9b2cab5 100644
 +				1	/* no resize */
 +			);
 +		}
-+		
++
  		IDXGISwapChain_Release(swapchainData->swapchain);
  		SDL_SetWindowData(
  			(SDL_Window*) swapchainData->windowHandle,
@@ -192,7 +192,7 @@ index 1001773..9b2cab5 100644
  	swapchainData->swapchainRTView = NULL;
 +	swapchainData->isFullScreen = 0;
 +	swapchainData->inExclusiveFullScreen = 0;
-+	swapchainData->reclaimFullScreenOnFocus = 0;
++	swapchainData->enterExclusiveFullScreenOnFocus = 0;
  	SDL_SetWindowData((SDL_Window*) windowHandle, WINDOW_SWAPCHAIN_DATA, swapchainData);
  	if (renderer->swapchainDataCount >= renderer->swapchainDataCapacity)
  	{
