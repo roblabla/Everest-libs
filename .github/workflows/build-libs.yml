@@ -329,6 +329,7 @@ jobs:
         name: fnalibs-linux-x86_64
         path: |
           FNA.dll
+          FNA.pdb
           libSDL2-2.0.so.0
           libSDL2_image-2.0.so.0
           libFAudio.so.0
