@@ -181,6 +181,11 @@ jobs:
         sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FAudio/CMakeLists.txt
     
     # FNA3D  
+    - name: Patch FNA3D
+      working-directory: source/FNA/lib/FNA3D
+      run: |
+        git am ../../../../patches/FNA3D_ExclusiveFullscreen.patch
+
     - name: Configure FNA3D
       working-directory: source/FNA/lib/FNA3D
       run: cmake -B build -G Ninja \
