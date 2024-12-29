@@ -27,6 +27,7 @@ jobs:
             msys2_system: mingw32
             msys2_env: i686
 
+<<<<<<< HEAD
           - name: Windows x64
             os: windows-latest
             platform: windows
@@ -34,6 +35,27 @@ jobs:
             shell: msys2 {0}
             msys2_system: mingw64
             msys2_env: x86_64
+=======
+<<<<<<< HEAD
+          # - name: Windows x64
+          #   os: windows-latest
+          #   platform: windows
+          #   target: mingw
+          #   shell: sh
+          #   cmake_flags: -G "Visual Studio 17 2022" -A x64
+          #   msys2_system: mingw64
+          #   msys2_env: x86_64
+=======
+          - name: Windows x64
+            os: windows-latest
+            platform: windows
+            target: mingw
+            shell: sh
+            cmake_flags: -G "Visual Studio 17 2022" -A x64
+            msys2_system: mingw64
+            msys2_env: x86_64
+>>>>>>> 8d95369 (Use MSVC to compile Windows binaries)
+>>>>>>> 0677f21 (Use MSVC to compile Windows binaries)
 
           - name: Linux x64
             os: ubuntu-latest
@@ -41,11 +63,11 @@ jobs:
             target: x86_64-unknown-linux-gnu
             shell: bash -e {0}
 
-          - name: macOS x64
-            os: macos-latest
-            platform: macos
-            target: x86_64-apple-darwin
-            shell: bash -e {0}
+          # - name: macOS x64
+          #   os: macos-latest
+          #   platform: macos
+          #   target: x86_64-apple-darwin
+          #   shell: bash -e {0}
             
     name: FNAlibs (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
@@ -242,7 +264,15 @@ jobs:
         cp source/FNA/lib/FAudio/${{ env.build-type }}/libFAudio.0.dylib libFAudio.0.dylib
         cp source/FNA/lib/FNA3D/${{ env.build-type }}/libFNA3D.0.dylib libFNA3D.0.dylib
         cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
+<<<<<<< HEAD
       if: ${{ matrix.platform == 'macos' }}
+=======
+<<<<<<< HEAD
+        cp source/MoltenVK/Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib libMoltenVK.dylib
+        cp source/Vulkan-Loader/build/loader/libvulkan.1.dylib libvulkan.1.dylib
+=======
+>>>>>>> 8d95369 (Use MSVC to compile Windows binaries)
+>>>>>>> 0677f21 (Use MSVC to compile Windows binaries)
 
     - name: Copy binaries (Linux)
       run: |
@@ -276,7 +306,15 @@ jobs:
           libFAudio.0.dylib
           libFNA3D.0.dylib
           libtheorafile.dylib
+<<<<<<< HEAD
       if: ${{ matrix.platform == 'macos' }}
+=======
+<<<<<<< HEAD
+          libMoltenVK.dylib
+          libvulkan.1.dylib
+=======
+>>>>>>> 8d95369 (Use MSVC to compile Windows binaries)
+>>>>>>> 0677f21 (Use MSVC to compile Windows binaries)
 
     - name: Upload Artifacts (Linux)
       uses: actions/upload-artifact@v3
