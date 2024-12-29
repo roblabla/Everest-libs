@@ -19,41 +19,32 @@ jobs:
     strategy:
       matrix:
         include:
-          # - name: Windows x86
-          #   os: windows-latest
-          #   platform: windows
-          #   target: i686-pc-windows-msvc
-          #   shell: msys2 {0}
-          #   msys2_system: mingw32
-          #   msys2_env: i686
+          - name: Windows x86
+            os: windows-latest
+            platform: windows
+            msys2_system: mingw32
+            msys2_env: i686
 
-          # - name: Windows x64
-          #   os: windows-latest
-          #   platform: windows
-          #   target: mingw
-          #   shell: sh
-          #   cmake_flags: -G "Visual Studio 17 2022" -A x64
-          #   msys2_system: mingw64
-          #   msys2_env: x86_64
+          - name: Windows x64
+            os: windows-latest
+            platform: windows
+            msys2_system: mingw64
+            msys2_env: x86_64
 
-          # - name: Linux x64
-          #   os: ubuntu-latest
-          #   platform: linux
-          #   target: x86_64-unknown-linux-gnu
-          #   shell: bash -e {0}
+          - name: Linux x64
+            os: ubuntu-latest
+            platform: linux
 
           - name: macOS x64
             os: macos-latest
             platform: macos
-            target: x86_64-apple-darwin
-            shell: bash -e {0}
             
     name: FNAlibs (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
 
     defaults:
       run:
-        shell: ${{ matrix.shell }}
+        shell: sh
     env:
       build-type: Debug
 
@@ -70,7 +61,7 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       if: ${{ matrix.platform == 'windows' }}
       with:
-        arch: x64
+        arch: ${{ matrix.msys2_env == 'x86_64' && 'x64' || 'x86' }}
 
     - name: Setup CMake (Windows)
       uses: jwlawson/actions-setup-cmake@master
@@ -116,118 +107,118 @@ jobs:
         # SDL2_image dependencies (https://github.com/libsdl-org/SDL_image/blob/0b79762f0a7da2aa05f0673d367994f7eb9ad812/.github/workflows/main.yml#L82-L100)
         sudo apt-get install autoconf automake libavif-dev libjpeg-dev libtiff-dev libtool libwebp-dev nasm zlib1g-dev
 
-    # # SDL2
-    # - name: Configure SDL2
-    #   working-directory: source/SDL2
-    #   run: |
-    #     cmake -B build -G Ninja \
-    #       -DSDL_VENDOR_INFO="GitHub Workflow" \
-    #       -DSDL_CMAKE_DEBUG_POSTFIX="" \
-    #       -DSDL_FORCE_STATIC_VCRT=ON \
-    #       -DCMAKE_INSTALL_PREFIX=cmake_prefix \
-    #       -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+    # SDL2
+    - name: Configure SDL2
+      working-directory: source/SDL2
+      run: |
+        cmake -B build -G Ninja \
+          -DSDL_VENDOR_INFO="GitHub Workflow" \
+          -DSDL_CMAKE_DEBUG_POSTFIX="" \
+          -DSDL_FORCE_STATIC_VCRT=ON \
+          -DCMAKE_INSTALL_PREFIX=cmake_prefix \
+          -DCMAKE_BUILD_TYPE=${{ env.build-type }}
 
-    # - name: Build SDL2
-    #   working-directory: source/SDL2
-    #   run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+    - name: Build SDL2
+      working-directory: source/SDL2
+      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
 
-    # - name: Install SDL2
-    #   working-directory: source/SDL2
-    #   run: |
-    #     set -eu
-    #     cmake --install build --config ${{ env.build-type }}
-    #     echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
+    - name: Install SDL2
+      working-directory: source/SDL2
+      run: |
+        set -eu
+        cmake --install build --config ${{ env.build-type }}
+        echo "SDL2_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
 
-    # - name: Export SDL2 library path (Windows)
-    #   if: ${{ matrix.platform == 'windows' }}
-    #   run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/SDL2.lib" >> $GITHUB_ENV
+    - name: Export SDL2 library path (Windows)
+      if: ${{ matrix.platform == 'windows' }}
+      run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/SDL2.lib" >> $GITHUB_ENV
       
-    # - name: Export SDL2 library path (macOS)
-    #   if: ${{ matrix.platform == 'macos' }}
-    #   run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.dylib" >> $GITHUB_ENV
+    - name: Export SDL2 library path (macOS)
+      if: ${{ matrix.platform == 'macos' }}
+      run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.dylib" >> $GITHUB_ENV
       
-    # - name: Export SDL2 library path (Linux)
-    #   if: ${{ matrix.platform == 'linux' }}
-    #   run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so" >> $GITHUB_ENV
+    - name: Export SDL2 library path (Linux)
+      if: ${{ matrix.platform == 'linux' }}
+      run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so" >> $GITHUB_ENV
 
-    # # SDL2_image
-    # - name: Configure SDL2_image
-    #   working-directory: source/SDL2_image
-    #   run: |
-    #     export CMAKE_CONFIGURATION_TYPES=${{ env.build-type }}
-    #     # JPEG-XL is disabled, because it's causing issues on macOS
-    #     cmake -B build -G Ninja \
-    #       -DSDL2IMAGE_SAMPLES=ON \
-    #       -DSDL2IMAGE_AVIF=ON \
-    #       -DSDL2IMAGE_JXL=OFF \
-    #       -DSDL2IMAGE_TIF=ON \
-    #       -DSDL2IMAGE_WEBP=ON \
-    #       -DSDL2IMAGE_VENDORED=ON \
-    #       -DSDL2IMAGE_DEBUG_POSTFIX="" \
-    #       -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-    #       -DCMAKE_INSTALL_PREFIX=cmake_prefix \
-    #       -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
-    #       -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
-    #       -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+    # SDL2_image
+    - name: Configure SDL2_image
+      working-directory: source/SDL2_image
+      run: |
+        export CMAKE_CONFIGURATION_TYPES=${{ env.build-type }}
+        # JPEG-XL is disabled, because it's causing issues on macOS
+        cmake -B build -G Ninja \
+          -DSDL2IMAGE_SAMPLES=ON \
+          -DSDL2IMAGE_AVIF=ON \
+          -DSDL2IMAGE_JXL=OFF \
+          -DSDL2IMAGE_TIF=ON \
+          -DSDL2IMAGE_WEBP=ON \
+          -DSDL2IMAGE_VENDORED=ON \
+          -DSDL2IMAGE_DEBUG_POSTFIX="" \
+          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
+          -DCMAKE_INSTALL_PREFIX=cmake_prefix \
+          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
+          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
+          -DCMAKE_BUILD_TYPE=${{ env.build-type }}
 
-    # - name: Build SDL2_image
-    #   working-directory: source/SDL2_image
-    #   run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+    - name: Build SDL2_image
+      working-directory: source/SDL2_image
+      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
 
-    # - name: Install SDL2_image
-    #   working-directory: source/SDL2_image
-    #   run: |
-    #     set -eu
-    #     cmake --install build --config ${{ env.build-type }}
-    #     echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
+    - name: Install SDL2_image
+      working-directory: source/SDL2_image
+      run: |
+        set -eu
+        cmake --install build --config ${{ env.build-type }}
+        echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
 
-    # # FNA3D + FAudio
-    # - name: Update FNA3D + FAudio CMake version (Windows)
-    #   if: ${{ matrix.platform == 'windows' }}
-    #   run: |
-    #     # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
-    #     sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FNA3D/CMakeLists.txt
-    #     sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FAudio/CMakeLists.txt
+    # FNA3D + FAudio
+    - name: Update FNA3D + FAudio CMake version (Windows)
+      if: ${{ matrix.platform == 'windows' }}
+      run: |
+        # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
+        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FNA3D/CMakeLists.txt
+        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FAudio/CMakeLists.txt
     
-    # # FNA3D  
-    # - name: Configure FNA3D
-    #   working-directory: source/FNA/lib/FNA3D
-    #   run: cmake -B build -G Ninja \
-    #          -DSDL_PTHREADS=OFF \
-    #          -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
-    #          -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
-    #          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-    #          -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+    # FNA3D  
+    - name: Configure FNA3D
+      working-directory: source/FNA/lib/FNA3D
+      run: cmake -B build -G Ninja \
+             -DSDL_PTHREADS=OFF \
+             -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
+             -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
+             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
+             -DCMAKE_BUILD_TYPE=${{ env.build-type }}
 
-    # - name: Build FNA3D
-    #   working-directory: source/FNA/lib/FNA3D
-    #   run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+    - name: Build FNA3D
+      working-directory: source/FNA/lib/FNA3D
+      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
 
-    # # FAudio
-    # - name: Configure FAudio
-    #   working-directory: source/FNA/lib/FAudio
-    #   run: cmake -B build -G Ninja \
-    #          -DSDL_PTHREADS=OFF \
-    #          -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
-    #          -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
-    #          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-    #          -DCMAKE_BUILD_TYPE=${{ env.build-type }}
+    # FAudio
+    - name: Configure FAudio
+      working-directory: source/FNA/lib/FAudio
+      run: cmake -B build -G Ninja \
+             -DSDL_PTHREADS=OFF \
+             -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
+             -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
+             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
+             -DCMAKE_BUILD_TYPE=${{ env.build-type }}
       
-    # - name: Build FAudio
-    #   working-directory: source/FNA/lib/FAudio
-    #   run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
+    - name: Build FAudio
+      working-directory: source/FNA/lib/FAudio
+      run: cmake --build build --config ${{ env.build-type }} --verbose --parallel
 
-    # # Theorafile
-    # - name: Build Theorafile (Windows)
-    #   if: ${{ matrix.platform == 'windows' }}
-    #   working-directory: source/FNA/lib/Theorafile
-    #   shell: msys2 {0}
-    #   run: mingw32-make
+    # Theorafile
+    - name: Build Theorafile (Windows)
+      if: ${{ matrix.platform == 'windows' }}
+      working-directory: source/FNA/lib/Theorafile
+      shell: msys2 {0}
+      run: mingw32-make
       
-    # - name: Build Theorafile (macOS & Linux)
-    #   if: ${{ matrix.platform != 'windows' }}
-    #   working-directory: source/FNA/lib/Theorafile
-    #   run: make
+    - name: Build Theorafile (macOS & Linux)
+      if: ${{ matrix.platform != 'windows' }}
+      working-directory: source/FNA/lib/Theorafile
+      run: make
 
     # MoltenVK
     - name: Build MoltenVK (macOS)
@@ -277,11 +268,11 @@ jobs:
     - name: Copy binaries (macOS)
       if: ${{ matrix.platform == 'macos' }}
       run: |
-        # cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
-        # cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.dylib libSDL2_image-2.0.0.dylib
-        # cp source/FNA/lib/FAudio/build/libFAudio.0.dylib libFAudio.0.dylib
-        # cp source/FNA/lib/FNA3D/build/libFNA3D.0.dylib libFNA3D.0.dylib
-        # cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
+        cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
+        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.dylib libSDL2_image-2.0.0.dylib
+        cp source/FNA/lib/FAudio/build/libFAudio.0.dylib libFAudio.0.dylib
+        cp source/FNA/lib/FNA3D/build/libFNA3D.0.dylib libFNA3D.0.dylib
+        cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
         cp source/MoltenVK/Package/Release/MoltenVK/dylib/macOS/libMoltenVK.dylib libMoltenVK.dylib
         cp source/Vulkan-Loader/build/loader/libvulkan.1.dylib libvulkan.1.dylib
 
@@ -313,6 +304,11 @@ jobs:
       with:
         name: fnalibs-macos-x86_64
         path: |
+          libSDL2-2.0.0.dylib
+          libSDL2_image-2.0.0.dylib
+          libFAudio.0.dylib
+          libFNA3D.0.dylib
+          libtheorafile.dylib
           libMoltenVK.dylib
           libvulkan.1.dylib
 
@@ -329,76 +325,76 @@ jobs:
           libFNA3D.so.0
           libtheorafile.so
 
-  # build-piton:
-  #   strategy:
-  #     matrix:
-  #       include:
-  #         - name: Windows x86
-  #           os: windows-latest
-  #           toolchain: 1.77.0-x86_64-pc-windows-msvc # Last version to support Windows 7
-  #           target: i686-pc-windows-msvc
-  #           ui: gui
-  #           lib_name: piton-gui-win_x86.exe
+  build-piton:
+    strategy:
+      matrix:
+        include:
+          - name: Windows x86
+            os: windows-latest
+            toolchain: 1.77.0-x86_64-pc-windows-msvc # Last version to support Windows 7
+            target: i686-pc-windows-msvc
+            ui: gui
+            lib_name: piton-gui-win_x86.exe
 
-  #         - name: Windows x64
-  #           os: windows-latest
-  #           toolchain: 1.77.0-x86_64-pc-windows-msvc # Last version to support Windows 7
-  #           target: x86_64-pc-windows-msvc
-  #           ui: gui
-  #           lib_name: piton-gui-win_x64.exe
+          - name: Windows x64
+            os: windows-latest
+            toolchain: 1.77.0-x86_64-pc-windows-msvc # Last version to support Windows 7
+            target: x86_64-pc-windows-msvc
+            ui: gui
+            lib_name: piton-gui-win_x64.exe
 
-  #         - name: Linux x64
-  #           os: ubuntu-latest
-  #           toolchain: stable-x86_64-unknown-linux-gnu
-  #           target: x86_64-unknown-linux-gnu
-  #           ui: none
-  #           lib_name: piton-linux_x64
-  #           container: quay.io/pypa/manylinux_2_28_x86_64 # See https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
+          - name: Linux x64
+            os: ubuntu-latest
+            toolchain: stable-x86_64-unknown-linux-gnu
+            target: x86_64-unknown-linux-gnu
+            ui: none
+            lib_name: piton-linux_x64
+            container: quay.io/pypa/manylinux_2_28_x86_64 # See https://kobzol.github.io/rust/ci/2021/05/07/building-rust-binaries-in-ci-that-work-with-older-glibc.html
 
-  #         - name: macOS x64
-  #           os: macos-latest
-  #           toolchain: stable-x86_64-apple-darwin
-  #           target: x86_64-apple-darwin
-  #           ui: gui
-  #           lib_name: piton-gui-macos_x64
+          - name: macOS x64
+            os: macos-latest
+            toolchain: stable-x86_64-apple-darwin
+            target: x86_64-apple-darwin
+            ui: gui
+            lib_name: piton-gui-macos_x64
 
 
-  #   name: Piton (${{ matrix.name }})
-  #   runs-on: ${{ matrix.os }}
-  #   container: ${{ matrix.container }}
+    name: Piton (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
 
-  #   env:
-  #     CARGO_TERM_COLOR: always
-  #     MACOSX_DEPLOYMENT_TARGET: 10.12
+    env:
+      CARGO_TERM_COLOR: always
+      MACOSX_DEPLOYMENT_TARGET: 10.12
 
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #     with:
-  #       sparse-checkout: source/Piton
-  #       submodules: true
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        sparse-checkout: source/Piton
+        submodules: true
 
-  #   - name: Setup environment variables
-  #     run: |
-  #       echo "RUSTUP_HOME=$HOME/.rustup" >> "$GITHUB_ENV"
-  #       echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
+    - name: Setup environment variables
+      run: |
+        echo "RUSTUP_HOME=$HOME/.rustup" >> "$GITHUB_ENV"
+        echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
 
-  #   - name: Setup Rust toolchain
-  #     if: ${{ !steps.cache.outputs.cache-hit }}
-  #     run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain ${{ matrix.toolchain }} --target ${{ matrix.target }} -y
+    - name: Setup Rust toolchain
+      if: ${{ !steps.cache.outputs.cache-hit }}
+      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain ${{ matrix.toolchain }} --target ${{ matrix.target }} -y
 
-  #   - name: Build Piton binary
-  #     working-directory: source/Piton/apphost
-  #     run: ~/.cargo/bin/cargo build --verbose --release --target ${{ matrix.target }} -F ui-${{ matrix.ui }}
+    - name: Build Piton binary
+      working-directory: source/Piton/apphost
+      run: ~/.cargo/bin/cargo build --verbose --release --target ${{ matrix.target }} -F ui-${{ matrix.ui }}
 
-  #   - name: Move Piton binary
-  #     working-directory: source/Piton/apphost
-  #     run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.lib_name }}
+    - name: Move Piton binary
+      working-directory: source/Piton/apphost
+      run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.lib_name }}
   
-  #   - name: Upload Piton binaries
-  #     uses: actions/upload-artifact@v3
-  #     with:
-  #       name: piton-apphosts
-  #       path: source/Piton/apphost/${{ matrix.lib_name }}
+    - name: Upload Piton binaries
+      uses: actions/upload-artifact@v3
+      with:
+        name: piton-apphosts
+        path: source/Piton/apphost/${{ matrix.lib_name }}
 
   generate-lib-ext:
     name: Generate lib-ext
@@ -461,29 +457,32 @@ jobs:
           cp ../binaries/fnalibs-linux-x86_64/FNA.dll lib-vanilla
 
           # Windows x86
-          # cp ../binaries/fnalibs-windows-i686/FNA3D.dll lib-vanilla
-          # cp ../binaries/fnalibs-windows-i686/FAudio.dll lib-vanilla
-          # cp ../binaries/fnalibs-windows-i686/SDL2.dll lib-vanilla
-          # cp ../binaries/fnalibs-windows-i686/libtheorafile.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/FNA3D.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/FAudio.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/SDL2.dll lib-vanilla
+          cp ../binaries/fnalibs-windows-i686/libtheorafile.dll lib-vanilla
 
           # macOS x64
           cp ../binaries/fnalibs-macos-x86_64/libFNA3D.0.dylib lib-vanilla/osx
           cp ../binaries/fnalibs-macos-x86_64/libFAudio.0.dylib lib-vanilla/osx
           cp ../binaries/fnalibs-macos-x86_64/libSDL2-2.0.0.dylib lib-vanilla/osx
           cp ../binaries/fnalibs-macos-x86_64/libtheorafile.dylib lib-vanilla/osx
+          cp ../binaries/fnalibs-macos-x86_64/libMoltenVK.dylib lib-vanilla/osx
+          cp ../binaries/fnalibs-macos-x86_64/libvulkan.1.dylib lib-vanilla/osx
 
           # Linux x64
-          # cp ../binaries/fnalibs-linux-x86_64/libSDL2-2.0.so.0 lib-vanilla/lib64
-          # cp ../binaries/fnalibs-linux-x86_64/libSDL2_image-2.0.so.0 lib-vanilla/lib64
-          # cp ../binaries/fnalibs-linux-x86_64/libFAudio.so.0 lib-vanilla/lib64
-          # cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib-vanilla/lib64
-          # cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libSDL2-2.0.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libSDL2_image-2.0.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libFAudio.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib-vanilla/lib64
+          cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib-vanilla/lib64
 
           # ### Everest Libraries
-          # mv ../binaries/fnalibs-windows-i686/* lib64-win-x86
+          mv ../binaries/fnalibs-linux-x86_64/FNA.dll .
+          mv ../binaries/fnalibs-windows-i686/* lib64-win-x86
           mv ../binaries/fnalibs-windows-x86_64/* lib64-win-x64
-          # mv ../binaries/fnalibs-macos-x86_64/* lib64-osx
-          # mv ../binaries/fnalibs-linux-x86_64/* lib64-linux
+          mv ../binaries/fnalibs-macos-x86_64/* lib64-osx
+          mv ../binaries/fnalibs-linux-x86_64/* lib64-linux
 
           cp ../binaries/discord_game_sdk/lib/x86/discord_game_sdk.dll lib64-win-x86
           cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.dll lib64-win-x64
@@ -491,7 +490,7 @@ jobs:
           cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.so lib64-linux/libdiscord_game_sdk.so
 
           ### Piton
-          # mv ../binaries/piton-apphosts piton
+          mv ../binaries/piton-apphosts piton
 
           popd
 
