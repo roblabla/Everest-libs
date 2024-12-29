@@ -184,6 +184,10 @@ jobs:
     - name: Patch FNA3D
       working-directory: source/FNA/lib/FNA3D
       run: |
+        # Required for applying patches
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        
         git am ../../../../patches/FNA3D_ExclusiveFullscreen.patch
 
     - name: Configure FNA3D
