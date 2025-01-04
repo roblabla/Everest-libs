@@ -89,8 +89,6 @@ jobs:
       run: |
         # SDL2 dependencies
         brew install ninja
-        # SDL2_image dependencies (https://github.com/libsdl-org/SDL_image/blob/0b79762f0a7da2aa05f0673d367994f7eb9ad812/.github/workflows/main.yml#L65-L81)
-        brew install autoconf automake jpeg-turbo libavif libpng libtiff nasm webp
 
     - name: Install dependencies (Linux)
       if: ${{ matrix.platform == 'linux' }}
@@ -104,8 +102,6 @@ jobs:
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev
-        # SDL2_image dependencies (https://github.com/libsdl-org/SDL_image/blob/0b79762f0a7da2aa05f0673d367994f7eb9ad812/.github/workflows/main.yml#L82-L100)
-        sudo apt-get install autoconf automake libavif-dev libjpeg-dev libtiff-dev libtool libwebp-dev nasm zlib1g-dev
 
     # SDL2
     - name: Configure SDL2
@@ -140,37 +136,6 @@ jobs:
     - name: Export SDL2 library path (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so" >> $GITHUB_ENV
-
-    # SDL2_image
-    - name: Configure SDL2_image
-      working-directory: source/SDL2_image
-      run: |
-        export CMAKE_CONFIGURATION_TYPES=${{ env.BUILD_TYPE }}
-        # JPEG-XL is disabled, because it's causing issues on macOS
-        cmake -B build -G Ninja \
-          -DSDL2IMAGE_SAMPLES=ON \
-          -DSDL2IMAGE_AVIF=ON \
-          -DSDL2IMAGE_JXL=OFF \
-          -DSDL2IMAGE_TIF=ON \
-          -DSDL2IMAGE_WEBP=ON \
-          -DSDL2IMAGE_VENDORED=ON \
-          -DSDL2IMAGE_DEBUG_POSTFIX="" \
-          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-          -DCMAKE_INSTALL_PREFIX=cmake_prefix \
-          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$PWD/build \
-          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$PWD/build \
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
-    - name: Build SDL2_image
-      working-directory: source/SDL2_image
-      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
-
-    - name: Install SDL2_image
-      working-directory: source/SDL2_image
-      run: |
-        set -eu
-        cmake --install build --config ${{ env.BUILD_TYPE }}
-        echo "SDL2_image_DIR=$(pwd)/cmake_prefix" >> $GITHUB_ENV
 
     # FNA3D + FAudio
     - name: Update FNA3D + FAudio CMake version (Windows)
@@ -274,7 +239,6 @@ jobs:
       if: ${{ matrix.platform == 'windows' }}
       run: |
         cp ${{ env.SDL2_DIR }}/bin/SDL2.dll SDL2.dll
-        cp ${{ env.SDL2_image_DIR }}/bin/SDL2_image.dll SDL2_image.dll
         cp source/FNA/lib/FAudio/build/FAudio.dll FAudio.dll
         cp source/FNA/lib/FNA3D/build/FNA3D.dll FNA3D.dll
         cp source/FNA/lib/Theorafile/libtheorafile.dll libtheorafile.dll
@@ -283,7 +247,6 @@ jobs:
       if: ${{ matrix.platform == 'macos' }}
       run: |
         cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
-        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.dylib libSDL2_image-2.0.0.dylib
         cp source/FNA/lib/FAudio/build/libFAudio.0.dylib libFAudio.0.dylib
         cp source/FNA/lib/FNA3D/build/libFNA3D.0.dylib libFNA3D.0.dylib
         cp source/FNA/lib/Theorafile/libtheorafile.dylib libtheorafile.dylib
@@ -296,7 +259,6 @@ jobs:
         cp source/FNA/bin/${{ env.BUILD_TYPE }}/net7.0/FNA.dll FNA.dll
         cp source/FNA/bin/${{ env.BUILD_TYPE }}/net7.0/FNA.pdb FNA.pdb
         cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
-        cp ${{ env.SDL2_image_DIR }}/lib/libSDL2_image-2.0.so.0 libSDL2_image-2.0.so.0
         cp source/FNA/lib/FAudio/build/libFAudio.so.0 libFAudio.so.0
         cp source/FNA/lib/FNA3D/build/libFNA3D.so.0 libFNA3D.so.0
         cp source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
@@ -308,7 +270,6 @@ jobs:
         name: fnalibs-windows-${{ matrix.msys2_env }}
         path: |
           SDL2.dll
-          SDL2_image.dll
           FAudio.dll
           FNA3D.dll
           libtheorafile.dll
@@ -320,7 +281,6 @@ jobs:
         name: fnalibs-macos-x86_64
         path: |
           libSDL2-2.0.0.dylib
-          libSDL2_image-2.0.0.dylib
           libFAudio.0.dylib
           libFNA3D.0.dylib
           libtheorafile.dylib
@@ -336,7 +296,6 @@ jobs:
           FNA.dll
           FNA.pdb
           libSDL2-2.0.so.0
-          libSDL2_image-2.0.so.0
           libFAudio.so.0
           libFNA3D.so.0
           libtheorafile.so
@@ -490,7 +449,6 @@ jobs:
 
           # Linux x64
           cp ../binaries/fnalibs-linux-x86_64/libSDL2-2.0.so.0 lib-vanilla/lib64
-          cp ../binaries/fnalibs-linux-x86_64/libSDL2_image-2.0.so.0 lib-vanilla/lib64
           cp ../binaries/fnalibs-linux-x86_64/libFAudio.so.0 lib-vanilla/lib64
           cp ../binaries/fnalibs-linux-x86_64/libFNA3D.so.0 lib-vanilla/lib64
           cp ../binaries/fnalibs-linux-x86_64/libtheorafile.so lib-vanilla/lib64
