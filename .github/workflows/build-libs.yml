@@ -191,9 +191,9 @@ jobs:
         git am ../../../../patches/FNA3D_ExclusiveFullscreen.patch
         git am ../../../../patches/FNA3D_Headless.patch
 
-        pushd MojoShader
+        cd MojoShader
         git am ../../../../../patches/MojoShader_Headless.patch
-        popd
+        cd ..
 
     - name: Configure FNA3D
       working-directory: source/FNA/lib/FNA3D
