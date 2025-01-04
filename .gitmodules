@@ -6,7 +6,7 @@
 	url = https://github.com/libsdl-org/SDL/
 [submodule "Piton"]
 	path = source/Piton
-	url = https://github.com/EverestAPI/Piton
+	url = https://github.com/Popax21/Piton
 [submodule "source/MoltenVK"]
 	path = source/MoltenVK
 	url = https://github.com/KhronosGroup/MoltenVK
