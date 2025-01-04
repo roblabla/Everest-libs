@@ -181,7 +181,7 @@ jobs:
         sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FAudio/CMakeLists.txt
     
     # FNA3D  
-    - name: Patch FNA3D
+    - name: Patch FNA3D + MojoShader
       working-directory: source/FNA/lib/FNA3D
       run: |
         # Required for applying patches
@@ -189,6 +189,11 @@ jobs:
         git config user.email github-actions@github.com
         
         git am ../../../../patches/FNA3D_ExclusiveFullscreen.patch
+        git am ../../../../patches/FNA3D_Headless.patch
+
+        pushd MojoShader
+        git am ../../../../../patches/MojoShader_Headless.patch
+        popd
 
     - name: Configure FNA3D
       working-directory: source/FNA/lib/FNA3D
