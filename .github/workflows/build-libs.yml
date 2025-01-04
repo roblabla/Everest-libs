@@ -148,8 +148,10 @@ jobs:
         git am ../../../../patches/FNA3D_ExclusiveFullscreen.patch
         git am ../../../../patches/FNA3D_Headless.patch
 
-        # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
-        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' CMakeLists.txt
+        if [ "x${{ runner.os }}" = "xWindows" ]; then
+          # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
+          sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' CMakeLists.txt
+        fi
 
         cd MojoShader
         git am ../../../../../patches/MojoShader_Headless.patch
@@ -172,8 +174,10 @@ jobs:
     - name: Patch FAudio
       working-directory: source/FNA/lib/FAudio
       run: |
-        # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
-        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' CMakeLists.txt
+        if [ "x${{ runner.os }}" = "xWindows" ]; then
+          # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
+          sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' CMakeLists.txt
+        fi
 
     - name: Configure FAudio
       working-directory: source/FNA/lib/FAudio
