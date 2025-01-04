@@ -8,7 +8,6 @@ This repository contains the latest libraries needed for Everest in answer to [t
 These libraries are open source and are built in CI.  
 
 - SDL2 `2.28.5`
-- SDL2_image `2.8.2`
 - FNA `24.01`
 - FNA3D `24.01`
 - FAudio `24.01`

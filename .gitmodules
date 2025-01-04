@@ -4,9 +4,6 @@
 [submodule "SDL2"]
 	path = source/SDL2
 	url = https://github.com/libsdl-org/SDL/
-[submodule "SDL2_image"]
-	path = source/SDL2_image
-	url = https://github.com/libsdl-org/SDL_image/
 [submodule "Piton"]
 	path = source/Piton
 	url = https://github.com/EverestAPI/Piton
