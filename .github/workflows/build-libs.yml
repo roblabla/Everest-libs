@@ -137,14 +137,6 @@ jobs:
       if: ${{ matrix.platform == 'linux' }}
       run: echo "SDL2_LIB=${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so" >> $GITHUB_ENV
 
-    # FNA3D + FAudio
-    - name: Update FNA3D + FAudio CMake version (Windows)
-      if: ${{ matrix.platform == 'windows' }}
-      run: |
-        # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
-        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FNA3D/CMakeLists.txt
-        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FAudio/CMakeLists.txt
-    
     # FNA3D  
     - name: Patch FNA3D + MojoShader
       working-directory: source/FNA/lib/FNA3D
@@ -155,6 +147,9 @@ jobs:
         
         git am ../../../../patches/FNA3D_ExclusiveFullscreen.patch
         git am ../../../../patches/FNA3D_Headless.patch
+
+        # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
+        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FNA3D/CMakeLists.txt
 
         cd MojoShader
         git am ../../../../../patches/MojoShader_Headless.patch
@@ -174,6 +169,11 @@ jobs:
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
 
     # FAudio
+    - name: Patch FAudio
+      run: |
+        # Update CMake to use CMAKE_MSVC_RUNTIME_LIBRARY
+        sed -i 's/cmake_minimum_required.*/cmake_minimum_required(VERSION 3.16)/' source/FNA/lib/FAudio/CMakeLists.txt
+
     - name: Configure FAudio
       working-directory: source/FNA/lib/FAudio
       run: cmake -B build -G Ninja \
