@@ -1,6 +1,7 @@
-# Everest-libs
-## What is it for?
-This repository contains the latest libraries needed for Everest in answer to [this issue](https://github.com/EverestAPI/Everest/issues/720). In short: Everest bundled libraries are mismatched and could have been built anywhere, the purpose of this repository is to guarantee the provenance of the libs using Github Actions.
+# Everest Libraries
+
+Provides third-party libraries used by Everest, using trusted sources such as GitHub Actions or offical downloads to obtain them.
+Some libraries have patches applied to them, to account for Everest-specific needs.
 
 ## Libraries Versions
 
@@ -9,7 +10,7 @@ These libraries are open source and are built in CI.
 
 - SDL2 `2.28.5`
 - FNA `24.01`
-- FNA3D `24.01`
+- FNA3D `24.01` with patches
 - FAudio `24.01`
 - Theorafile [48d74af](https://github.com/FNA-XNA/Theorafile/tree/48d74afcbf838fe95ca56cec142efae07bb56f65)
 - MoltenVK `1.2.11`
