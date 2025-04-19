@@ -160,12 +160,13 @@ jobs:
 
     - name: Configure FNA3D
       working-directory: source/FNA/lib/FNA3D
-      run: cmake -B build -G Ninja \
-             -DSDL_PTHREADS=OFF \
-             -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
-             -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
-             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      run: |
+        cmake -B build -G Ninja \
+          -DSDL_PTHREADS=OFF \
+          -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
+          -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
+          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
     - name: Build FNA3D
       working-directory: source/FNA/lib/FNA3D
@@ -182,12 +183,13 @@ jobs:
 
     - name: Configure FAudio
       working-directory: source/FNA/lib/FAudio
-      run: cmake -B build -G Ninja \
-             -DSDL_PTHREADS=OFF \
-             -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
-             -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
-             -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
-             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      run: |
+        cmake -B build -G Ninja \
+          -DSDL_PTHREADS=OFF \
+          -DSDL2_INCLUDE_DIRS=${{ env.SDL2_DIR }}/include/SDL2 \
+          -DSDL2_LIBRARIES=${{ env.SDL2_LIB }} \
+          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
       
     - name: Build FAudio
       working-directory: source/FNA/lib/FAudio
