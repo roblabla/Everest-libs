@@ -15,6 +15,10 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  BUILD_TYPE: Release
+  NET_FRAMEWORK: net7.0
+
 jobs:
   build-fnalibs:
     strategy:
@@ -25,37 +29,70 @@ jobs:
             platform: windows
             msys2_system: mingw32
             msys2_env: i686
+            cmake_flags: --verbose --parallel
 
           - name: Windows x64
             os: windows-latest
             platform: windows
             msys2_system: mingw64
             msys2_env: x86_64
+            cmake_flags: --verbose --parallel
 
           - name: Linux x64
             os: ubuntu-latest
             platform: linux
+            container: debian:buster # Required for GLIBC v2.28
+            cmake_flags:
 
           - name: macOS x64
             os: macos-latest
             platform: macos
-            
+            cmake_flags: --verbose --parallel
+
     name: FNAlibs (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.12
 
     defaults:
       run:
         shell: sh
-    env:
-      BUILD_TYPE: Release
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Install Git (Linux)
+      if: ${{ matrix.platform == 'linux' }}
+      run: |
+        apt-get update
+        apt-get install -y git ca-certificates
+
+    - name: Checkout repository (Windows & macOS)
+      uses: actions/checkout@v4
+      if: ${{ matrix.platform != 'linux' }}
       with:
         sparse-checkout: |
           source
           patches
         submodules: recursive
+
+    # Need to use CLI since checkout action doesn't like that Git was installed manually
+    - name: Checkout repository (Linux)
+      if: ${{ matrix.platform == 'linux' }}
+      run: |
+        git config --global --add safe.directory /__w/Everest-libs/Everest-libs
+
+        git init
+        git remote add origin https://github.com/${{ github.repository }}.git
+        git config core.sparseCheckout true
+
+        echo "source" >> .git/info/sparse-checkout
+        echo "patches" >> .git/info/sparse-checkout
+
+        git fetch --depth=1 origin ${{ github.ref }}
+        git checkout FETCH_HEAD
+
+        git submodule update --init --recursive
 
     # Setup
     - name: Set up MSVC (Windows)
@@ -94,15 +131,26 @@ jobs:
     - name: Install dependencies (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
-        sudo apt-get update
-
         # SDL2 dependencies (https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md)
-        sudo apt-get install build-essential git make \
+        apt-get install -y build-essential make \
             pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
             libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev
+
+        # Setup Debian Bullseye PPA for newer CMake version
+        echo "deb http://deb.debian.org/debian bullseye main" >> /etc/apt/sources.list
+        echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+        cat <<EOF > /etc/apt/preferences.d/bullseye
+        Package: *
+        Pin: release n=bullseye
+        Pin-Priority: 100
+        EOF
+
+        apt-get update
+        apt-get install -y -t bullseye cmake
+
 
     # SDL2
     - name: Configure SDL2
@@ -117,7 +165,7 @@ jobs:
 
     - name: Build SDL2
       working-directory: source/SDL2
-      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} ${{ matrix.cmake_flags }}
 
     - name: Install SDL2
       working-directory: source/SDL2
@@ -170,7 +218,7 @@ jobs:
 
     - name: Build FNA3D
       working-directory: source/FNA/lib/FNA3D
-      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} ${{ matrix.cmake_flags }}
 
     # FAudio
     - name: Patch FAudio
@@ -193,7 +241,7 @@ jobs:
       
     - name: Build FAudio
       working-directory: source/FNA/lib/FAudio
-      run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose --parallel
+      run: cmake --build build --config ${{ env.BUILD_TYPE }} ${{ matrix.cmake_flags }}
 
     # Theorafile
     - name: Build Theorafile (Windows)
@@ -230,7 +278,7 @@ jobs:
           -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
 
         make
-        
+
     # FNA (Only built on Linux, due to being platform agnostic)
     - uses: actions/setup-dotnet@v4
       if: ${{ matrix.platform == 'linux' }}
@@ -272,7 +320,7 @@ jobs:
         cp source/FNA/lib/Theorafile/libtheorafile.so libtheorafile.so
 
     - name: Upload Artifacts (Windows)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ matrix.platform == 'windows' }}
       with:
         name: fnalibs-windows-${{ matrix.msys2_env }}
@@ -283,7 +331,7 @@ jobs:
           libtheorafile.dll
 
     - name: Upload Artifacts (macOS)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ matrix.platform == 'macos' }}
       with:
         name: fnalibs-macos-x86_64
@@ -296,7 +344,7 @@ jobs:
           libvulkan.1.dylib
 
     - name: Upload Artifacts (Linux)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ matrix.platform == 'linux' }}
       with:
         name: fnalibs-linux-x86_64
@@ -374,9 +422,9 @@ jobs:
       run: mv target/${{ matrix.target }}/release/${{ startsWith(matrix.os, 'windows') && 'piton.exe' || 'piton' }} ${{ matrix.lib_name }}
   
     - name: Upload Piton binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: piton-apphosts
+        name: piton-apphosts-${{ matrix.target }}
         path: source/Piton/apphost/${{ matrix.lib_name }}
 
   generate-lib-ext:
@@ -394,7 +442,7 @@ jobs:
           rm -rf ../lib-ext ../binaries
           mkdir ../lib-ext ../binaries
   
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: ../binaries
           
@@ -476,7 +524,10 @@ jobs:
           cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.so lib64-linux/libdiscord_game_sdk.so
 
           ### Piton
-          mv ../binaries/piton-apphosts piton
+          mv ../binaries/piton-apphosts-i686-pc-windows-msvc piton
+          mv ../binaries/piton-apphosts-x86_64-pc-windows-msvc piton
+          mv ../binaries/piton-apphosts-x86_64-unknown-linux-gnu piton
+          mv ../binaries/piton-apphosts-x86_64-apple-darwin piton
 
           popd
 
@@ -496,7 +547,7 @@ jobs:
           cp -r ../lib-ext/* .
 
           git add -f .
-          git commit -m "Update binaries for ${{ github.sha}}" || true
+          git commit -m "Update binaries for ${{ github.sha }}" || true
           git push origin binaries
 
           
