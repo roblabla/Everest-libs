@@ -441,6 +441,12 @@ jobs:
         run: |
           rm -rf ../lib-ext ../binaries
           mkdir ../lib-ext ../binaries
+
+      - name: Merge Piton apphosts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: piton-apphosts
+          pattern: piton-apphosts-*
   
       - uses: actions/download-artifact@v4
         with:
@@ -524,12 +530,7 @@ jobs:
           cp ../binaries/discord_game_sdk/lib/x86_64/discord_game_sdk.so lib64-linux/libdiscord_game_sdk.so
 
           ### Piton
-          mv ../binaries/piton-apphosts-i686-pc-windows-msvc piton
-          mv ../binaries/piton-apphosts-x86_64-pc-windows-msvc piton
-          mv ../binaries/piton-apphosts-x86_64-unknown-linux-gnu piton
-          mv ../binaries/piton-apphosts-x86_64-apple-darwin piton
-
-          popd
+          mv ../binaries/piton-apphosts piton
 
       - name: Display the new structure
         run: ls -R ../lib-ext
@@ -549,19 +550,3 @@ jobs:
           git add -f .
           git commit -m "Update binaries for ${{ github.sha }}" || true
           git push origin binaries
-
-          
-
-
-
-
-    
-
-
-
-
-
-    
-
-
-
