@@ -487,7 +487,7 @@ jobs:
           cp binaries/fmod/windows-x64/fmodstudio64.dll ../lib-ext/lib64-win-x64
 
           # Piton
-          cp source/Piton/apphost/test/piton-runtime.yaml ../lib-ext/piton-runtime.yaml
+          cp piton-runtime.yaml ../lib-ext/piton-runtime.yaml
 
           pushd ../lib-ext
           
