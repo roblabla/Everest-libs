@@ -61,11 +61,11 @@ jobs:
         shell: sh
 
     steps:
-    - name: Install Git (Linux)
+    - name: Install Git and cURL (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
         apt-get update
-        apt-get install -y git ca-certificates
+        apt-get install -y git curl ca-certificates
 
     - name: Checkout repository (Windows & macOS)
       uses: actions/checkout@v4
