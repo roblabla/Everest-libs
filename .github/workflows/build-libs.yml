@@ -288,7 +288,7 @@ jobs:
     - name: Build FNA
       if: ${{ matrix.platform == 'linux' }}
       working-directory: source/FNA
-      run: dotnet build -c ${{ env.BUILD_TYPE }} FNA.Core.csproj
+      run: dotnet build -c ${{ env.BUILD_TYPE }} FNA.NetFramework.csproj
 
     # Upload
     - name: Copy binaries (Windows)
@@ -312,8 +312,8 @@ jobs:
     - name: Copy binaries (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
-        cp source/FNA/bin/${{ env.BUILD_TYPE }}/net7.0/FNA.dll FNA.dll
-        cp source/FNA/bin/${{ env.BUILD_TYPE }}/net7.0/FNA.pdb FNA.pdb
+        cp source/FNA/bin/${{ env.BUILD_TYPE }}/net4.0/FNA.dll FNA.dll
+        cp source/FNA/bin/${{ env.BUILD_TYPE }}/net4.0/FNA.pdb FNA.pdb
         cp ${{ env.SDL2_DIR }}/lib/libSDL2-2.0.so.0 libSDL2-2.0.so.0
         cp source/FNA/lib/FAudio/build/libFAudio.so.0 libFAudio.so.0
         cp source/FNA/lib/FNA3D/build/libFNA3D.so.0 libFNA3D.so.0
