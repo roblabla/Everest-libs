@@ -80,7 +80,7 @@ jobs:
     - name: Checkout repository (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
-        git config --global --add safe.directory /__w/Everest-libs/Everest-libs
+        git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
 
         git init
         git remote add origin https://github.com/${{ github.repository }}.git
