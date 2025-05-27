@@ -80,7 +80,7 @@ jobs:
     - name: Checkout repository (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
-        git config --global --add safe.directory /__w/Everest-libs/Everest-libs
+        git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
 
         git init
         git remote add origin https://github.com/${{ github.repository }}.git
@@ -376,7 +376,7 @@ jobs:
 
           - name: Linux x64
             os: ubuntu-latest
-            toolchain: stable-x86_64-unknown-linux-gnu
+            toolchain: 1.86.0-x86_64-unknown-linux-gnu
             target: x86_64-unknown-linux-gnu
             ui: none
             lib_name: piton-linux_x64
@@ -384,7 +384,7 @@ jobs:
 
           - name: macOS x64
             os: macos-13
-            toolchain: stable-x86_64-apple-darwin
+            toolchain: 1.86.0-x86_64-apple-darwin
             target: x86_64-apple-darwin
             ui: gui
             lib_name: piton-gui-macos_x64
