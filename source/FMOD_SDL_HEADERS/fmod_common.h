@@ -1,7 +1,7 @@
 /*$ preserve start $*/
 
 /* ================================================================================================== */
-/* FMOD Studio - Common C/C++ header file. Copyright (c), Firelight Technologies Pty, Ltd. 2004-2020. */
+/* FMOD Studio - Common C/C++ header file. Copyright (c), Firelight Technologies Pty, Ltd. 2004-2019. */
 /*                                                                                                    */
 /* This header is included by fmod.hpp (C++ interface) and fmod.h (C interface) therefore is the      */
 /* base header for all FMOD headers.                                                                  */
@@ -15,7 +15,7 @@
     0xaaaabbcc -> aaaa = major version number.  bb = minor version number.  cc = development version number.
 */
 
-#define FMOD_VERSION    0x00011020
+#define FMOD_VERSION    0x00011014
 
 /*
     Compiler specific settings.
@@ -31,7 +31,7 @@
 
 #if defined(_WIN32) || defined(__CYGWIN__) || defined(__ORBIS__) || defined(__psp2__)
     #define F_EXPORT __declspec(dllexport)
-#elif defined(__APPLE__) || defined(__ANDROID__) || defined(__linux__) || defined(F_USE_ATTRIBUTE)
+#elif defined(__APPLE__) || defined(__ANDROID__) || defined(__linux__)
     #define F_EXPORT __attribute__((visibility("default")))
 #else
     #define F_EXPORT
