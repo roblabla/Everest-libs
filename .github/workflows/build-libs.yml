@@ -284,7 +284,7 @@ jobs:
       if: ${{ matrix.platform == 'linux' }}
       working-directory: source/FMOD_SDL_HEADERS
       run: |
-        make -e SDL2_INCLUDE=../SDL2/include/ SDL2_LIB=../SDL2/build/
+        make -e SDL2_PREFIX=${{ env.SDL2_DIR }}
 
 
     # FNA (Only built on Linux, due to being platform agnostic)
