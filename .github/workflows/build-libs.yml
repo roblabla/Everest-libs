@@ -139,9 +139,10 @@ jobs:
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev
 
-        # Setup Debian Bullseye PPA for newer CMake version
+        # Setup Debian Bullseye PPA for newer CMake and Wayland version
         echo "deb http://deb.debian.org/debian bullseye main" >> /etc/apt/sources.list
         echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+        echo "deb http://deb.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
         cat <<EOF > /etc/apt/preferences.d/bullseye
         Package: *
         Pin: release n=bullseye
@@ -149,7 +150,7 @@ jobs:
         EOF
 
         apt-get update
-        apt-get install -y -t bullseye cmake
+        apt-get install -y -t bullseye cmake libwayland-dev libdecor-0-dev
 
 
     # SDL2
