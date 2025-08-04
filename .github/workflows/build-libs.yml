@@ -64,6 +64,8 @@ jobs:
     - name: Install Git and cURL (Linux)
       if: ${{ matrix.platform == 'linux' }}
       run: |
+        # Debian buster is now EOL, need to set APT to use the package archive.
+        sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list
         apt-get update
         apt-get install -y git curl ca-certificates
 
@@ -142,7 +144,7 @@ jobs:
         # Setup Debian Bullseye PPA for newer CMake and Wayland version
         echo "deb http://deb.debian.org/debian bullseye main" >> /etc/apt/sources.list
         echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
-        echo "deb http://deb.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
+        echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
         cat <<EOF > /etc/apt/preferences.d/bullseye
         Package: *
         Pin: release n=bullseye
