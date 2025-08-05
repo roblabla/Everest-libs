@@ -20,7 +20,7 @@ These libraries are open source and are built in CI.
 - Steamworks.NET [`2024.8.0`](https://github.com/rlabrecque/Steamworks.NET/tree/2024.8.0)
 
 ### Closed-Source Libraries
-These libraries are closed source and cannot be _built_ in CI.
+These libraries are closed source and cannot be _built_ in CI.  
 Some are not accessible without an account, and therefore need to be vendored as a binary blob.
 
 - DiscordGameSDK `3.2.1` (downloaded: https://dl-game-sdk.discordapp.net/3.2.1/discord_game_sdk.zip)
